@@ -17,7 +17,7 @@ forked from GustavZ/realtime_object_detection: [https://github.com/GustavZ/realt
 - OpenCV 3.3.1/OpenCV 3.4.0
  <br />
 
-## Current max Performance on `ssd_mobilenet` (with visualization):
+## Current max Performance on `ssd_mobilenet` (with visualization 160x120):
 - Nvidia Jetson Tx2 with Tegra 8GB:                           **5fps - 30 fps**
  <br />
 
