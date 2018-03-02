@@ -1,49 +1,26 @@
-# realtime_object_detection
-Realtime object detection based on [Tensorflow's Object Detection API](https://github.com/tensorflow/models/tree/master/research/object_detection) with an extreme Focus on Performance. <br />
-Specialized for `ssd_mobilenet` models.
-<br />
-<br />
-## About the Project
-The Idea was to create a realtime capable object detection pipeline on various machines. <br />
-Plug and play, ready to use without deep previous knowledge.<br /> <br />
-The following work has been done based on the original API:
-- Capturing frames of a Camera-Input using OpenCV in seperate thread to increase performance
-- Calculate, print and optionally visualize current-local and total FPS
-- Allows Models to grow GPU memory allocation. *(ssd_mobilenet_v11_coco needs 350 MB)*
-- Added Option for detection without visualization to increase performance
-- Added optional automated model download from [model-zoo](https://github.com/tensorflow/models/blob/master/research/object_detection/g3doc/detection_model_zoo.md) if necessary
-- Added `config.yml` for quick&easy parameter parsing
-- Exported new frozen Model based on `ssd_mobilenet_v1_coco` with altered `batch_non_max_suppression.score_threshold` to increase perfomance
-- Added various scripts in `/stuff` to make use of tf's API
-- Added `split_model` Option to split frozen graph into a GPU and CPU session. <br />
-Works only for `ssd_mobilenet` models but results in significant performance increase. 
-- **Results: Overall Performance Increase of up to 300%** depending on the config and the running system
-<br />
+# Tensorflow realtime_object_detection on Jetson TX2
 
-## Getting Started:  
-- create a copy of `config.sample.yml` called `config.yml`
-- Optional: Change Parameters in `config.yml` to load other models or to modify input params.
-- For example: If you are not interested in visualization: set `visualize` to `False`. <br />
-- run `image_detection.py` for single test image detection
-- run `object_detection.py` for realtime object detection
-- Enjoy!
+## About this repository
+forked from GustavZ/realtime_object_detection: [https://github.com/GustavZ/realtime_object_detection](https://github.com/GustavZ/realtime_object_detection)
+
+## Getting Started:
+- `ssh -C -Y ubuntu@xxx.xxx.xxx.xxx`
+- run `realtime_object_detection.py` thread version of realtime object detection
+- wait few minuts.
 <br />
 
 ## My Setup:
-- Ubuntu 16.04
-- Python 2.7
-- Tensorflow 1.4
-- OpenCV 3.3.1
+- Jetson TX2
+- JetPack 3.1
+- Python 3.6
+- Tensorflow 1.4.1/Tensorflow 1.5.0
+- OpenCV 3.3.1/OpenCV 3.4.0
  <br />
 
-## Current max Performance on `ssd_mobilenet` (with|without visualization):
-- Dell XPS 15 with i7 @ 2.80GHZ x8 and GeForce GTX 1050 4GB:  **42fps | 76fps**
-- Nvidia Jetson Tx2 with Tegra 8GB:                           **5fps | 14 fps**
+## Current max Performance on `ssd_mobilenet` (with visualization):
+- Nvidia Jetson Tx2 with Tegra 8GB:                           **5fps - 30 fps**
  <br />
 
-## Further Work:
-- [test_models](https://github.com/GustavZ/test_models): A repo for models i am currently working on for benchmark tests
-- [deeptraining_hands](https://github.com/GustavZ/deeptraining_hands): A repo for setting up the [ego](http://vision.soic.indiana.edu/projects/egohands/)- and [oxford](http://www.robots.ox.ac.uk/~vgg/data/hands/) hands-datasets.<br />
-It also contains several scripts to convert various annotation formats to be able to train Networks on different deep learning frameworks <br />
-currently supports `.xml`, `.mat`, `.csv`, `.record`, `.txt` annotations
-- [tf_for_od_api](https://github.com/GustavZ/yolo_for_tf_od_api): A repo to be able to include Yolo V2 in tf's object detection api
+![](./document/ssd_mobilenet_coco_160x120.png)
+![](./document/ssd_mobilenet_160x120.png)<br>
+![](./document/ssd_mobilenet_1280x720.png)
