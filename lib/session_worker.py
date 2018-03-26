@@ -43,14 +43,14 @@ class SessionWorker():
     def execution(self,graph,config):
         self.is_thread_running = True
         try:
-            start_time,start_clock = time.time(),time.clock()
+            #start_time,start_clock = time.time(),time.clock()
             with tf.Session(graph=graph,config=config) as sess:
-                end_time,end_clock=time.time()-start_time,time.clock()-start_clock
-                print("{} - sess time:{:.8f},clock:{:.8f}".format(self.tag,end_time,end_clock))
+                #end_time,end_clock=time.time()-start_time,time.clock()-start_clock
+                #print("{} - sess time:{:.8f},clock:{:.8f}".format(self.tag,end_time,end_clock))
                 while self.is_thread_running:
                     #with self.lock:
                         while not self.sess_queue.empty():
-                            start_time,start_clock=time.time(),time.clock()
+                            #start_time,start_clock=time.time(),time.clock()
                             q = self.sess_queue.get(block=False)
                             opts = q["opts"]
                             feeds= q["feeds"]
@@ -62,8 +62,8 @@ class SessionWorker():
                                 results = sess.run(opts,feed_dict=feeds)
                             self.result_queue.put({"results":results,"extras":extras})
                             self.sess_queue.task_done()
-                            end_time,end_clock=time.time()-start_time,time.clock()-start_clock
-                            print("{} - time:{:.8f},clock:{:.8f}".format(self.tag,end_time,end_clock))
+                            #end_time,end_clock=time.time()-start_time,time.clock()-start_clock
+                            #print("{} - time:{:.8f},clock:{:.8f}".format(self.tag,end_time,end_clock))
                         time.sleep(0.005)
                     # 実行するqueueが空の時はsleepする
                     #time.sleep(0.005)
@@ -85,11 +85,11 @@ class SessionWorker():
         新しい処理をqueueに入れる
         #処理中は次のqueueが入らないようにlockする
         '''
-        start_time,start_clock=time.time(),time.clock()
+        #start_time,start_clock=time.time(),time.clock()
         #with self.lock:
         self.sess_queue.put({"opts":opts,"feeds":feeds,"extras":extras})
-        end_time,end_clock=time.time()-start_time,time.clock()-start_clock
-        print("{} put_sess_queue(), time:{:.8f} clock:{:.8f}".format(self.tag,end_time,end_clock))
+        #end_time,end_clock=time.time()-start_time,time.clock()-start_clock
+        #print("{} put_sess_queue(), time:{:.8f} clock:{:.8f}".format(self.tag,end_time,end_clock))
         return
 
     def is_result_empty(self):
@@ -99,13 +99,13 @@ class SessionWorker():
             return False
 
     def get_result_queue(self):
-        start_time,start_clock=time.time(),time.clock()
+        #start_time,start_clock=time.time(),time.clock()
         result = None
         if not self.result_queue.empty():
             result = self.result_queue.get(block=False)
             self.result_queue.task_done()
-        end_time,end_clock=time.time()-start_time,time.clock()-start_clock
-        print("{} get_result_queue(), time:{:.8f} clock:{:.8f}".format(self.tag,end_time,end_clock))
+        #end_time,end_clock=time.time()-start_time,time.clock()-start_clock
+        #print("{} get_result_queue(), time:{:.8f} clock:{:.8f}".format(self.tag,end_time,end_clock))
         return result
 
     def stop(self):
