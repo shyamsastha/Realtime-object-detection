@@ -17,9 +17,14 @@ ssd_shape: 300              # used for the split model algorithm
                             # currently only supports ssd networks trained on 300x300 and 600x600 input 
 
 # Change only if you use another model
-model_name: 'ssd_mobilenet_v11_coco'
-model_path: 'models/ssd_mobilenet_v11_coco/frozen_inference_graph.pb'
-#model_path: 'models/ssd_mobilenet/roadsign_frozen_inference_graph.pb'
-label_path: 'object_detection/data/mscoco_label_map.pbtxt'
-#label_path: 'models/ssd_mobilenet/roadsign_label_map.pbtxt'
-num_classes: 90
+model_name: 'ssd_mobilenet_v1_coco'
+
+# mscoco
+#model_path: 'models/ssd_mobilenet_v11_coco/frozen_inference_graph.pb'
+#label_path: 'object_detection/data/mscoco_label_map.pbtxt'
+#num_classes: 90
+
+# own data
+model_path: 'models/ssd_mobilenet/roadsign_frozen_inference_graph_v1_2nd_4k.pb'
+label_path: 'models/ssd_mobilenet/roadsign_label_map.pbtxt'
+num_classes: 4

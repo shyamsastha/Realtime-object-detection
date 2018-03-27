@@ -200,13 +200,12 @@ def detection(detection_graph, category_index, score, expand):
                 cpu_worker = SessionWorker("CPU",detection_graph,config)
                 gpu_opts = [score_out, expand_out]
                 cpu_opts = [detection_boxes, detection_scores, detection_classes, num_detections]
-            gpu_counter = 0
-            cpu_counter = 0
-            unknown_counter = 0
+            #gpu_counter = 0
+            #cpu_counter = 0
             print("Press 'q' to Exit")
             print('Starting Detection')
             while video_stream.isActive():
-                start0_time,start0_clock=time.time(),time.clock()
+                #start0_time,start0_clock=time.time(),time.clock()
                 boxes = None
                 # actual Detection
                 if split_model:
@@ -240,16 +239,17 @@ def detection(detection_graph, category_index, score, expand):
 
                     g = gpu_worker.get_result_queue()
                     if g is None:
-                        gpu_counter += 1
+                        #gpu_counter += 1
                         '''
                         gpu thread has no output queue. ok skip, let's check cpu thread.
                         '''
+                        pass
                     else:
                         '''
                         gpu thread has output queue.
                         '''
-                        print("gpu wait={}".format(gpu_counter))
-                        gpu_counter = 0
+                        #print("gpu wait={}".format(gpu_counter))
+                        #gpu_counter = 0
                         score,expand,image = g["results"][0],g["results"][1],g["extras"]
 
                         if cpu_worker.is_sess_empty():
@@ -263,15 +263,15 @@ def detection(detection_graph, category_index, score, expand):
 
                     c = cpu_worker.get_result_queue()
                     if c is None:
-                        cpu_counter += 1
+                        #cpu_counter += 1
                         '''
                         cpu thread has no output queue. ok, nothing to do. continue
                         '''
                         time.sleep(0.005)
                         continue
                     else:
-                        print("cpu wait={}".format(cpu_counter))
-                        cpu_counter = 0
+                        #print("cpu wait={}".format(cpu_counter))
+                        #cpu_counter = 0
                         boxes, scores, classes, num, image = c["results"][0],c["results"][1],c["results"][2],c["results"][3],c["extras"]
                 else:
                     # default session
@@ -293,7 +293,7 @@ def detection(detection_graph, category_index, score, expand):
 
                 # Visualization of the results of a detection.
                 if visualize:
-                    start_time,start_clock=time.time(),time.clock()
+                    #start_time,start_clock=time.time(),time.clock()
                     vis_util.visualize_boxes_and_labels_on_image_array(
                         image,
                         np.squeeze(boxes),
@@ -306,13 +306,13 @@ def detection(detection_graph, category_index, score, expand):
                         cv2.putText(image,"fps: {}".format(fps.fps_local()), (10,30),
                                     cv2.FONT_HERSHEY_SIMPLEX, 0.75, (77, 255, 9), 2)
                     cv2.imshow('object_detection', image)
-                    end_time,end_clock=time.time()-start_time,time.clock()-start_clock
-                    print("{} - time:{:.8f},clock:{:.8f}".format("VISUALIZE",end_time,end_clock))
+                    #end_time,end_clock=time.time()-start_time,time.clock()-start_clock
+                    #print("{} - time:{:.8f},clock:{:.8f}".format("VISUALIZE",end_time,end_clock))
                     # Exit Option
                     if cv2.waitKey(1) & 0xFF == ord('q'):
                         break
-                    end0_time,end0_clock=time.time()-start0_time,time.clock()-start0_clock
-                    print("cv2.waitKey time:{:.8f} total clock:{:.8f}".format(end0_time,end0_clock))
+                    #end0_time,end0_clock=time.time()-start0_time,time.clock()-start0_clock
+                    #print("cv2.waitKey time:{:.8f} total clock:{:.8f}".format(end0_time,end0_clock))
                 else:
                     cur_frames += 1
                     # Exit after max frames if no visualization
@@ -323,8 +323,8 @@ def detection(detection_graph, category_index, score, expand):
                     if cur_frames >= max_frames:
                         break
                 fps.update()
-                end0_time,end0_clock=time.time()-start0_time,time.clock()-start0_clock
-                print("total time:{:.8f} total clock:{:.8f}".format(end0_time,end0_clock))
+                #end0_time,end0_clock=time.time()-start0_time,time.clock()-start0_clock
+                #print("total time:{:.8f} total clock:{:.8f}".format(end0_time,end0_clock))
             if split_model:
                 gpu_worker.stop()
                 cpu_worker.stop()
