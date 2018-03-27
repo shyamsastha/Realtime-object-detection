@@ -14,6 +14,7 @@ import cv2
 import tarfile
 import six.moves.urllib as urllib
 from tensorflow.core.framework import graph_pb2
+import time
 
 # Protobuf Compilation (once necessary)
 #os.system('protoc object_detection/protos/*.proto --python_out=.')
@@ -22,7 +23,10 @@ from object_detection.utils import label_map_util
 from object_detection.utils import visualization_utils as vis_util
 from stuff.helper import FPS2, WebcamVideoStream, SessionWorker
 
-import time
+# KCF TRACKER
+import sys
+sys.path.append(os.getcwd()+'/stuff/kcf')
+import KCF
 
 ## LOAD CONFIG PARAMS ##
 if (os.path.isfile('config.yml')):
@@ -49,6 +53,9 @@ num_classes         = cfg['num_classes']
 split_model         = cfg['split_model']
 log_device          = cfg['log_device']
 ssd_shape           = cfg['ssd_shape']
+use_tracker         = cfg['use_tracker']
+num_trackers        = cfg['num_trackers']
+tracker_frames      = cfg['tracker_frames']
 
 
 # Download Model form TF's Model Zoo
@@ -171,12 +178,69 @@ def load_labelmap():
     return category_index
 
 
+def visualize_detection(frame, boxes, classes, scores, category_index, fps):
+    if visualize:
+        vis_util.visualize_boxes_and_labels_on_image_array(
+        frame,
+        boxes,
+        classes,
+        scores,
+        category_index,
+        use_normalized_coordinates=True,
+        line_thickness=8)
+        if vis_text:
+            cv2.putText(frame,"fps: {}".format(fps.fps_local()), (10,30),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.75, (77, 255, 9), 2)
+        cv2.imshow('object_detection', frame)
+    else:
+        # Exit after max frames if no visualization
+        for box, score, _class in zip(boxes, scores, classes):
+            if fps._glob_numFrames %det_interval==0 and score > det_th:
+                label = category_index[_class]['name']
+                print("label: {}\nscore: {}\nbox: {}".format(label, score, box))
+    # Exit Option
+    if visualize:
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            return False
+    else:
+        if fps._glob_numFrames >= max_frames:
+            return False
+    return True
+
+
+def conv_detect2track(box, width, height):
+    # transforms normalized to absolut coords
+    ymin, xmin, ymax, xmax = box
+    ymin = ymin*height
+    xmin = xmin*width
+    ymax = ymax*height
+    xmax = xmax*width
+    boxwidth= xmax - xmin
+    boxheight = ymax - ymin
+    
+    newbox = [xmin,ymin, boxwidth, boxheight]
+    #newbox = map(int,newbox)
+    return newbox
+
+def conv_track2detect(box, width, height):
+    # transforms absolut to normalized coords
+    dw = 1./width
+    dh = 1./height
+    x, y, boxwidth, boxheight = box #map(float,box)
+    xmin = x * dw
+    ymin = y * dh
+    xmax = (x+boxwidth) * dw
+    ymax = (y+boxheight) * dh
+    
+    newbox = np.array([ymin,xmin,ymax,xmax])
+    return newbox
+    
+
 def detection(detection_graph, category_index, score, expand):
     print("Building Graph")
     # Session Config: allow seperate GPU/CPU adressing and limit memory allocation
     config = tf.ConfigProto(allow_soft_placement=True, log_device_placement=log_device)
     config.gpu_options.allow_growth=allow_memory_growth
-    cur_frames = 0
     with detection_graph.as_default():
         with tf.Session(graph=detection_graph,config=config) as sess:
             # Define Input and Ouput tensors
@@ -197,87 +261,114 @@ def detection(detection_graph, category_index, score, expand):
                 cpu_opts = [detection_boxes, detection_scores, detection_classes, num_detections]
                 gpu_counter = 0
                 cpu_counter = 0
-            # Start Video Stream and FPS calculation
+            # Start Video Stream, FPS calculation and Tracker
             fps = FPS2(fps_interval).start()
             video_stream = WebcamVideoStream(video_input,width,height).start()
-            cur_frames = 0
+            #tracker = create_tracker(tracker_type)
+            tracker = KCF.kcftracker(False, True, False, False)
+            real_width = video_stream.real_width
+            real_height = video_stream.real_height
+            tracker_counter = 0
+            track = False
             print("Press 'q' to Exit")
             print('Starting Detection')
             while video_stream.isActive():
-                # actual Detection
-                if split_model:
-                    # split model in seperate gpu and cpu session threads
-                    if gpu_worker.is_sess_empty():
-                        # read video frame, expand dimensions and convert to rgb
-                        image = video_stream.read()
-                        image_expanded = np.expand_dims(cv2.cvtColor(image, cv2.COLOR_BGR2RGB), axis=0)
-                        # put new queue
-                        gpu_feeds = {image_tensor: image_expanded}
-                        if visualize:
-                            gpu_extras = image # for visualization frame
+                # Detection
+                if not (use_tracker and track):
+                    if split_model:
+                        # split model in seperate gpu and cpu session threads
+                        if gpu_worker.is_sess_empty():
+                            # read video frame, expand dimensions and convert to rgb
+                            frame = video_stream.read()
+                            frame_expanded = np.expand_dims(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB), axis=0)
+                            # put new queue
+                            gpu_feeds = {image_tensor: frame_expanded}
+                            if visualize:
+                                gpu_extras = frame # for visualization frame
+                            else:
+                                gpu_extras = None
+                            gpu_worker.put_sess_queue(gpu_opts,gpu_feeds,gpu_extras)
+    
+                        g = gpu_worker.get_result_queue()
+                        if g is None:
+                            # gpu thread has no output queue. ok skip, let's check cpu thread.
+                            gpu_counter += 1
                         else:
-                            gpu_extras = None
-                        gpu_worker.put_sess_queue(gpu_opts,gpu_feeds,gpu_extras)
-
-                    g = gpu_worker.get_result_queue()
-                    if g is None:
-                        # gpu thread has no output queue. ok skip, let's check cpu thread.
-                        gpu_counter += 1
+                            # gpu thread has output queue.
+                            gpu_counter = 0
+                            score,expand,frame = g["results"][0],g["results"][1],g["extras"]
+    
+                            if cpu_worker.is_sess_empty():
+                                # When cpu thread has no next queue, put new queue.
+                                # else, drop gpu queue.
+                                cpu_feeds = {score_in: score, expand_in: expand}
+                                cpu_extras = frame
+                                cpu_worker.put_sess_queue(cpu_opts,cpu_feeds,cpu_extras)
+    
+                        c = cpu_worker.get_result_queue()
+                        if c is None:
+                            # cpu thread has no output queue. ok, nothing to do. continue
+                            cpu_counter += 1
+                            time.sleep(0.005)
+                            continue # If CPU RESULT has not been set yet, no fps update
+                        else:
+                            cpu_counter = 0
+                            boxes, scores, classes, num, frame = c["results"][0],c["results"][1],c["results"][2],c["results"][3],c["extras"]
                     else:
-                        # gpu thread has output queue.
-                        gpu_counter = 0
-                        score,expand,image = g["results"][0],g["results"][1],g["extras"]
-
-                        if cpu_worker.is_sess_empty():
-                            # When cpu thread has no next queue, put new queue.
-                            # else, drop gpu queue.
-                            cpu_feeds = {score_in: score, expand_in: expand}
-                            cpu_extras = image
-                            cpu_worker.put_sess_queue(cpu_opts,cpu_feeds,cpu_extras)
-
-                    c = cpu_worker.get_result_queue()
-                    if c is None:
-                        # cpu thread has no output queue. ok, nothing to do. continue
-                        cpu_counter += 1
-                        time.sleep(0.005)
-                        continue # If CPU RESULT has not been set yet, no fps update
-                    else:
-                        cpu_counter = 0
-                        boxes, scores, classes, num, image = c["results"][0],c["results"][1],c["results"][2],c["results"][3],c["extras"]
-                else:
-                    # default session
-                    image = video_stream.read()
-                    image_expanded = np.expand_dims(cv2.cvtColor(image, cv2.COLOR_BGR2RGB), axis=0)
-                    boxes, scores, classes, num = sess.run(
-                            [detection_boxes, detection_scores, detection_classes, num_detections],
-                            feed_dict={image_tensor: image_expanded})
-
-                # Visualization of the results of a detection.
-                if visualize:
-                    vis_util.visualize_boxes_and_labels_on_image_array(
-                        image,
-                        np.squeeze(boxes),
-                        np.squeeze(classes).astype(np.int32),
-                        np.squeeze(scores),
-                        category_index,
-                        use_normalized_coordinates=True,
-                        line_thickness=8)
-                    if vis_text:
-                        cv2.putText(image,"fps: {}".format(fps.fps_local()), (10,30),
-                                    cv2.FONT_HERSHEY_SIMPLEX, 0.75, (77, 255, 9), 2)
-                    cv2.imshow('object_detection', image)
-                    # Exit Option
-                    if cv2.waitKey(1) & 0xFF == ord('q'):
+                        # default session
+                        frame = video_stream.read()
+                        frame_expanded = np.expand_dims(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB), axis=0)
+                        (boxes, scores, classes, num) = sess.run(
+                                [detection_boxes, detection_scores, detection_classes, num_detections],
+                                feed_dict={image_tensor: frame_expanded})
+                        
+                    # reformat detection
+                    num = int(num)
+                    boxes = np.squeeze(boxes)
+                    classes = np.squeeze(classes).astype(np.int32)
+                    scores = np.squeeze(scores)
+                    
+                    # visualize detection
+                    vis = visualize_detection(frame, boxes, classes, scores, category_index, fps)
+                    if not vis:
                         break
+                    
+                    # Activate Tracker
+                    if use_tracker and num <= num_trackers:
+                        tracker_frame = frame
+                        track = True
+                        first_track = True
+                        
+                # Tracking
                 else:
-                    cur_frames += 1
-                    # Exit after max frames if no visualization
-                    for box, score, _class in zip(np.squeeze(boxes), np.squeeze(scores), np.squeeze(classes)):
-                        if cur_frames%det_interval==0 and score > det_th:
-                            label = category_index[_class]['name']
-                            print("label: {}\nscore: {}\nbox: {}".format(label, score, box))
-                    if cur_frames >= max_frames:
+                    frame = video_stream.read()
+                    if first_track:
+                        trackers = []
+                        tracker_boxes = boxes
+                        for box in boxes[~np.all(boxes == 0, axis=1)]:
+                                tracker.init(conv_detect2track(box,real_width, real_height), tracker_frame)
+                                trackers.append(tracker)
+                        first_track = False
+                        #print ("A: {}".format(boxes[~np.all(boxes == 0, axis=1)]))
+                    i = 0
+                    for tracker in trackers:
+                        tracker_box = tracker.update(frame)
+                        #print ("B: {}".format(tracker_box))
+                        tracker_boxes[i,:] = conv_track2detect(tracker_box, real_width, real_height)
+                        i  += 1
+                        #p1 = (tracker_box[0], tracker_box[1])
+                        #p2 = (tracker_box[0] + tracker_box[2], tracker_box[1] + tracker_box[3])
+                        #cv2.rectangle(frame, p1, p2, (255,0,0), 2)
+                    #cv2.imshow('object_detection', frame)
+                    #print ("C: {}".format(tracker_boxes[~np.all(tracker_boxes == 0, axis=1)]))
+                    vis = visualize_detection(frame, tracker_boxes, classes, scores, category_index, fps)
+                    if not vis:
                         break
+                    tracker_counter += 1
+                    #tracker_frame = frame
+                    if tracker_counter >= tracker_frames:
+                        track = False
+                        tracker_counter = 0
                 fps.update()
 
     # End everything
