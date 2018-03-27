@@ -32,6 +32,11 @@ Works only for `ssd_mobilenet` models but results in significant performance inc
 - **Mask Detection**: run `object_detection_mask_test.py` (currently only works for `mask r-cnn` models and `TF 1.5`, so also no `split_model`)
 <br />
 
+## Under Development (help appreciated):
+- **KCF Tracking**: run `./build_kcf.sh` inside directory, set `use_tracker` to `True` inside config, run `object_detection_kcf_test.py` (currently only works more or less stable without `split_model`)
+- **Mask Detection**: run `object_detection_mask_test.py` (currently only works for `mask r-cnn` models and `TF 1.5`, so also no `split_model`)
+<br />
+
 ## My Setup:
 - Ubuntu 16.04
 - Python 2.7
