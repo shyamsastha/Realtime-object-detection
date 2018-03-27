@@ -16,14 +16,14 @@ forked from GustavZ/realtime_object_detection: [https://github.com/GustavZ/realt
     * OpenCV 3.4.0/Tensorflow 1.6.0
   * JetPack 3.1
     * Python 3.6
-    * OpenCV 3.3.1/Tensorflow 1.4.1
+    * OpenCV 3.3.1/Tensorflow 1.4.1 (Main)
     * OpenCV 3.4.0/Tensorflow 1.5.0
     * OpenCV 3.4.0/Tensorflow 1.6.0
 
- <br />
+<br />
 
 ## NVPMODEL
-| ** Mode ** | ** Mode Name ** | ** Denver 2 ** | ** Frequency ** | ** ARM A57 ** | ** Frequency ** | ** GPU Frequency ** |
+| Mode | Mode Name | Denver 2 | Frequency | ARM A57 | Frequency | GPU Frequency |
 |:--|:--|:--|:--|:--|:--|:--|
 | 0 | Max-N | 2 | 2.0 GHz | 4 | 2.0 GHz | 1.30 GHz |
 | 1 | Max-Q | 0 | | 4 | 1.2 GHz | 0.85 GHz |
@@ -50,7 +50,7 @@ sudo nvpmodel -q --verbose
 
 ## Current max Performance on `ssd_mobilenet` (with visualization 160x120):
 | FPS | Mode | CPU | Watt | Ampere | Volt-Ampere | Model | classes |
-|:--|:--|:--|:--|:--|:--|:--|:--|:--|
+|:--|:--|:--|:--|:--|:--|:--|:--|
 | 40 | Max-N | 27-55% | 15.6W | 0.27A | 27.8VA | roadsign_frozen_inference_graph_v1_2nd_4k.pb | 4 |
 | 36 | Max-P ARM | 50-59% | 12.1W | 0.21A | 21.9VA | roadsign_frozen_inference_graph_v1_2nd_4k.pb | 4 |
 
