@@ -5,7 +5,7 @@ forked from GustavZ/realtime_object_detection: [https://github.com/GustavZ/realt
 
 ## Getting Started:
 - login Jetson TX2 `ssh -C -Y ubuntu@xxx.xxx.xxx.xxx`
-- run `realtime_object_detection.py` thread version of realtime object detection
+- run `object_detection.py` realtime object detection
 - wait few minuts.
 <br />
 
