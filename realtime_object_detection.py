@@ -19,22 +19,36 @@ from tensorflow.core.framework import graph_pb2
 from object_detection.utils import label_map_util
 from object_detection.utils import visualization_utils as vis_util
 from stuff.helper import FPS2, WebcamVideoStream
-
-from lib import SessionWorker
+import logging
 import time
 
-## LOAD CONFIG PARAMS ##
-if (os.path.isfile('config.yml')):
-    with open("config.yml", 'r') as ymlfile:
-        cfg = yaml.load(ymlfile)
-else:
-    with open("config.sample.yml", 'r') as ymlfile:
-        cfg = yaml.load(ymlfile)
+from concurrent import futures
+import multiprocessing
+import ctypes
 
+logging.basicConfig(level=logging.INFO,
+                    format='[%(levelname)s] time:%(created).8f pid:%(process)d pn:%(processName)-10s tid:%(thread)d tn:%(threadName)-10s fn:%(funcName)-10s %(message)s',
+)
+
+
+# Used in GPU/CPU process
+## LOAD CONFIG PARAMS ##
+def read_config():
+    logging.debug("enter")
+    global cfg
+    if (os.path.isfile('config.yml')):
+        with open("config.yml", 'r') as ymlfile:
+            cfg = yaml.load(ymlfile)
+    else:
+        with open("config.sample.yml", 'r') as ymlfile:
+            cfg = yaml.load(ymlfile)
+    return cfg
+
+cfg = read_config()
 video_input         = cfg['video_input']
 visualize           = cfg['visualize']
 vis_text            = cfg['vis_text']
-max_frames          = cfg['max_frames']
+execution_seconds   = cfg['execution_seconds']
 width               = cfg['width']
 height              = cfg['height']
 fps_interval        = cfg['fps_interval']
@@ -47,10 +61,10 @@ label_path          = cfg['label_path']
 num_classes         = cfg['num_classes']
 split_model         = cfg['split_model']
 log_device          = cfg['log_device']
-convert_rgb         = cfg['convert_rgb']
 ssd_shape           = cfg['ssd_shape']
 
 
+# Used in Main process
 # Download Model form TF's Model Zoo
 def download_model():
     model_file = model_name + '.tar.gz'
@@ -68,6 +82,7 @@ def download_model():
     else:
         print('Model found. Proceed.')
 
+# Used in GPU/CPU prosess
 # helper function for split model
 def _node_name(n):
   if n.startswith("^"):
@@ -75,6 +90,7 @@ def _node_name(n):
   else:
     return n.split(":")[0]
 
+# Used in GPU/CPU prosess
 # Load a (frozen) Tensorflow model into memory.
 def load_frozenmodel():
     print('Loading frozen model into memory')
@@ -163,6 +179,7 @@ def load_frozenmodel():
         return detection_graph, score, expand
 
 
+# Used in CPU prosess
 def load_labelmap():
     print('Loading label map')
     label_map = label_map_util.load_labelmap(label_path)
@@ -171,12 +188,35 @@ def load_labelmap():
     return category_index
 
 
-def detection(detection_graph, category_index, score, expand):
+# Used in GPU prosess
+def process_gpu():
+    logging.debug("enter")
+
+    cfg = read_config()
+    video_input         = cfg['video_input']
+    visualize           = cfg['visualize']
+    vis_text            = cfg['vis_text']
+    execution_seconds   = cfg['execution_seconds']
+    width               = cfg['width']
+    height              = cfg['height']
+    fps_interval        = cfg['fps_interval']
+    allow_memory_growth = cfg['allow_memory_growth']
+    det_interval        = cfg['det_interval']
+    det_th              = cfg['det_th']
+    model_name          = cfg['model_name']
+    model_path          = cfg['model_path']
+    label_path          = cfg['label_path']
+    num_classes         = cfg['num_classes']
+    split_model         = cfg['split_model']
+    log_device          = cfg['log_device']
+    ssd_shape           = cfg['ssd_shape']
+
     print("Building Graph")
+    detection_graph, score, expand = load_frozenmodel()
+
     # Session Config: allow seperate GPU/CPU adressing and limit memory allocation
     config = tf.ConfigProto(allow_soft_placement=True, log_device_placement=log_device)
     config.gpu_options.allow_growth=allow_memory_growth
-    cur_frames = 0
     with detection_graph.as_default():
         with tf.Session(graph=detection_graph,config=config) as sess:
             # Define Input and Ouput tensors
@@ -185,162 +225,305 @@ def detection(detection_graph, category_index, score, expand):
             detection_scores = detection_graph.get_tensor_by_name('detection_scores:0')
             detection_classes = detection_graph.get_tensor_by_name('detection_classes:0')
             num_detections = detection_graph.get_tensor_by_name('num_detections:0')
-            if split_model:
-                score_out = detection_graph.get_tensor_by_name('Postprocessor/convert_scores:0')
-                expand_out = detection_graph.get_tensor_by_name('Postprocessor/ExpandDims_1:0')
-                score_in = detection_graph.get_tensor_by_name('Postprocessor/convert_scores_1:0')
-                expand_in = detection_graph.get_tensor_by_name('Postprocessor/ExpandDims_1_1:0')
-            # Start Video Stream and FPS calculation
-            fps = FPS2(fps_interval).start()
+            score_out = detection_graph.get_tensor_by_name('Postprocessor/convert_scores:0')
+            expand_out = detection_graph.get_tensor_by_name('Postprocessor/ExpandDims_1:0')
+            score_in = detection_graph.get_tensor_by_name('Postprocessor/convert_scores_1:0')
+            expand_in = detection_graph.get_tensor_by_name('Postprocessor/ExpandDims_1_1:0')
+            gpu_opts = [score_out, expand_out]
+
             video_stream = WebcamVideoStream(video_input,width,height).start()
-            cur_frames = 0
-
-            if split_model:
-                gpu_worker = SessionWorker("GPU",detection_graph,config)
-                cpu_worker = SessionWorker("CPU",detection_graph,config)
-                gpu_opts = [score_out, expand_out]
-                cpu_opts = [detection_boxes, detection_scores, detection_classes, num_detections]
-            #gpu_counter = 0
-            #cpu_counter = 0
-            print("Press 'q' to Exit")
             print('Starting Detection')
-            while video_stream.isActive():
-                #start0_time,start0_clock=time.time(),time.clock()
-                boxes = None
-                # actual Detection
-                if split_model:
-                    # Split Detection in two sessions.
-                    #(score, expand) = sess.run([score_out, expand_out], feed_dict={image_tensor: image_expanded})
-                    #g = {"results":[score,expand],"extras":image}
-                    if gpu_worker.is_sess_empty():
-                        '''
-                        When gpu thread has no next queue, put new queue.
-                        '''
-                        ########################################
-                        # read video frame and expand dimensions
-                        image = video_stream.read()
-                        #fps.update()
-                        if convert_rgb:
-                            try:
-                                cvt = True
-                            except:
-                                print("Error converting BGR2RGB")
-                                cvt = False
-                        image_expanded = np.expand_dims(cv2.cvtColor(image, cv2.COLOR_BGR2RGB), axis=0)
-                        ########################################
-                        # put new queue
-                        gpu_feeds = {image_tensor: image_expanded}
-                        if visualize:
-                            gpu_extras = image # for visualization frame
-                        else:
-                            gpu_extras = None
-                        gpu_worker.put_sess_queue(gpu_opts,gpu_feeds,gpu_extras)
-                        ########################################
-
-                    g = gpu_worker.get_result_queue()
-                    if g is None:
-                        #gpu_counter += 1
-                        '''
-                        gpu thread has no output queue. ok skip, let's check cpu thread.
-                        '''
-                        pass
-                    else:
-                        '''
-                        gpu thread has output queue.
-                        '''
-                        #print("gpu wait={}".format(gpu_counter))
-                        #gpu_counter = 0
-                        score,expand,image = g["results"][0],g["results"][1],g["extras"]
-
-                        if cpu_worker.is_sess_empty():
-                            '''
-                            When cpu thread has no next queue, put new queue.
-                            else, drop gpu queue.
-                            '''
-                            cpu_feeds = {score_in: score, expand_in: expand}
-                            cpu_extras = image
-                            cpu_worker.put_sess_queue(cpu_opts,cpu_feeds,cpu_extras)
-
-                    c = cpu_worker.get_result_queue()
-                    if c is None:
-                        #cpu_counter += 1
-                        '''
-                        cpu thread has no output queue. ok, nothing to do. continue
-                        '''
-                        time.sleep(0.005)
-                        continue
-                    else:
-                        #print("cpu wait={}".format(cpu_counter))
-                        #cpu_counter = 0
-                        boxes, scores, classes, num, image = c["results"][0],c["results"][1],c["results"][2],c["results"][3],c["extras"]
-                else:
-                    # default session
-                    # read video frame and expand dimensions
-                    image = video_stream.read()
-                    #fps.update()
-                    if convert_rgb:
-                        try:
-                            cvt = True
-                        except:
-                            print("Error converting BGR2RGB")
-                            cvt = False
-                    image_expanded = np.expand_dims(cv2.cvtColor(image, cv2.COLOR_BGR2RGB), axis=0)
-
-                    (boxes, scores, classes, num) = sess.run(
-                            [detection_boxes, detection_scores, detection_classes, num_detections],
-                            feed_dict={image_tensor: image_expanded})
-
-
-                # Visualization of the results of a detection.
-                if visualize:
-                    #start_time,start_clock=time.time(),time.clock()
-                    vis_util.visualize_boxes_and_labels_on_image_array(
-                        image,
-                        np.squeeze(boxes),
-                        np.squeeze(classes).astype(np.int32),
-                        np.squeeze(scores),
-                        category_index,
-                        use_normalized_coordinates=True,
-                        line_thickness=8)
-                    if vis_text:
-                        cv2.putText(image,"fps: {}".format(fps.fps_local()), (10,30),
-                                    cv2.FONT_HERSHEY_SIMPLEX, 0.75, (77, 255, 9), 2)
-                    cv2.imshow('object_detection', image)
-                    #end_time,end_clock=time.time()-start_time,time.clock()-start_clock
-                    #print("{} - time:{:.8f},clock:{:.8f}".format("VISUALIZE",end_time,end_clock))
-                    # Exit Option
-                    if cv2.waitKey(1) & 0xFF == ord('q'):
+            #skip_counter = 0
+            #fps = FPS2(fps_interval).start()
+            try:
+                while video_stream.isActive():
+                    if not running.value:
                         break
-                    #end0_time,end0_clock=time.time()-start0_time,time.clock()-start0_clock
-                    #print("cv2.waitKey time:{:.8f} total clock:{:.8f}".format(end0_time,end0_clock))
-                else:
-                    cur_frames += 1
-                    # Exit after max frames if no visualization
+                    # read video frame, expand dimensions and convert to rgb
+                    image = video_stream.read()
+                    image_expanded = np.expand_dims(cv2.cvtColor(image, cv2.COLOR_BGR2RGB), axis=0)
+                    gpu_feeds = {image_tensor: image_expanded}
+                    if visualize:
+                        gpu_extras = image  # for visualization frame
+                    else:
+                        gpu_extras = None
+                    # sess.run
+                    results = sess.run(gpu_opts,feed_dict=gpu_feeds)
+                    # send result to conn
+                    gpu_out_conn.send({"results":results,"extras":gpu_extras})
+                    #fps.update()
+                    #print("GPU FPS:{:.1f} Skip:{}".format(fps.fps_local(),skip_counter))
+            except Exception as e:
+                import traceback
+                traceback.print_exc()
+            finally:
+                running.value = False
+                #fps.stop()
+                video_stream.stop()
+                gpu_out_conn.close()
+                cpu_in_conn.close()
+                cpu_out_conn.close()
+                visualize_in_conn.close()
+
+# Used in CPU prosess
+def process_cpu():
+    logging.debug("enter")
+
+    cfg = read_config()
+    video_input         = cfg['video_input']
+    visualize           = cfg['visualize']
+    vis_text            = cfg['vis_text']
+    execution_seconds   = cfg['execution_seconds']
+    width               = cfg['width']
+    height              = cfg['height']
+    fps_interval        = cfg['fps_interval']
+    allow_memory_growth = cfg['allow_memory_growth']
+    det_interval        = cfg['det_interval']
+    det_th              = cfg['det_th']
+    model_name          = cfg['model_name']
+    model_path          = cfg['model_path']
+    label_path          = cfg['label_path']
+    num_classes         = cfg['num_classes']
+    split_model         = cfg['split_model']
+    log_device          = cfg['log_device']
+    ssd_shape           = cfg['ssd_shape']
+
+    print("Building Graph")
+    detection_graph, score, expand = load_frozenmodel()
+
+    # Session Config: allow seperate GPU/CPU adressing and limit memory allocation
+    config = tf.ConfigProto(allow_soft_placement=True, log_device_placement=log_device)
+    config.gpu_options.allow_growth=allow_memory_growth
+    with detection_graph.as_default():
+        with tf.Session(graph=detection_graph,config=config) as sess:
+            # Define Input and Ouput tensors
+            image_tensor = detection_graph.get_tensor_by_name('image_tensor:0')
+            detection_boxes = detection_graph.get_tensor_by_name('detection_boxes:0')
+            detection_scores = detection_graph.get_tensor_by_name('detection_scores:0')
+            detection_classes = detection_graph.get_tensor_by_name('detection_classes:0')
+            num_detections = detection_graph.get_tensor_by_name('num_detections:0')
+            score_out = detection_graph.get_tensor_by_name('Postprocessor/convert_scores:0')
+            expand_out = detection_graph.get_tensor_by_name('Postprocessor/ExpandDims_1:0')
+            score_in = detection_graph.get_tensor_by_name('Postprocessor/convert_scores_1:0')
+            expand_in = detection_graph.get_tensor_by_name('Postprocessor/ExpandDims_1_1:0')
+            cpu_opts = [detection_boxes, detection_scores, detection_classes, num_detections]
+
+            #skip_counter = 0
+            #fps = FPS2(fps_interval).start()
+            try:
+                while running.value:
+                    g = cpu_in_conn.recv()
+                    if g is None:
+                        break
+                    score,expand,cpu_extras = g["results"][0],g["results"][1],g["extras"]
+                    cpu_feeds = {score_in: score, expand_in: expand}
+                    results = sess.run(cpu_opts,feed_dict=cpu_feeds)
+                    # send result to conn
+                    cpu_out_conn.send({"results":results,"extras":cpu_extras})
+                    #frame_counter.value += 1
+                    #fps.update()
+                    #print("CPU FPS:{:.1f} Skip:{}".format(fps.fps_local(),skip_counter))
+            except Exception as e:
+                import traceback
+                traceback.print_exc()
+            finally:
+                running.value = False
+                #fps.stop()
+                gpu_out_conn.close()
+                cpu_in_conn.close()
+                cpu_out_conn.close()
+                visualize_in_conn.close()
+    return
+
+def process_visualize():
+    logging.debug("enter")
+
+    cfg = read_config()
+    video_input         = cfg['video_input']
+    visualize           = cfg['visualize']
+    vis_text            = cfg['vis_text']
+    execution_seconds   = cfg['execution_seconds']
+    width               = cfg['width']
+    height              = cfg['height']
+    fps_interval        = cfg['fps_interval']
+    allow_memory_growth = cfg['allow_memory_growth']
+    det_interval        = cfg['det_interval']
+    det_th              = cfg['det_th']
+    model_name          = cfg['model_name']
+    model_path          = cfg['model_path']
+    label_path          = cfg['label_path']
+    num_classes         = cfg['num_classes']
+    split_model         = cfg['split_model']
+    log_device          = cfg['log_device']
+    ssd_shape           = cfg['ssd_shape']
+
+    category_index = load_labelmap()
+    cur_frames = 0
+    fps = FPS2(fps_interval).start()
+    try:
+        while running.value:
+            c = visualize_in_conn.recv()
+            if c is None:
+                break
+            boxes, scores, classes, num, image = c["results"][0],c["results"][1],c["results"][2],c["results"][3],c["extras"]
+            # Visualization of the results of a detection.
+            if visualize:
+                vis_util.visualize_boxes_and_labels_on_image_array(
+                    image,
+                    np.squeeze(boxes),
+                    np.squeeze(classes).astype(np.int32),
+                    np.squeeze(scores),
+                    category_index,
+                    use_normalized_coordinates=True,
+                    line_thickness=8)
+                if vis_text:
+                    fps.update()
+                    cv2.putText(image,"fps: {}".format(fps.fps_local()), (10,30),
+                                cv2.FONT_HERSHEY_SIMPLEX, 0.75, (77, 255, 9), 2)
+                cv2.imshow('object_detection', image)
+                # Exit Option
+                if cv2.waitKey(1) & 0xFF == ord('q'):
+                    running.value = False
+                    c = visualize_in_conn.recv()
+                    break
+            else:
+                cur_frames += 1
+                # Exit after max frames if no visualization
+                if cur_frames%det_interval==0:
                     for box, score, _class in zip(np.squeeze(boxes), np.squeeze(scores), np.squeeze(classes)):
-                        if cur_frames%det_interval==0 and score > det_th:
+                        if score > det_th:
                             label = category_index[_class]['name']
                             print("label: {}\nscore: {}\nbox: {}".format(label, score, box))
-                    if cur_frames >= max_frames:
-                        break
-                fps.update()
-                #end0_time,end0_clock=time.time()-start0_time,time.clock()-start0_clock
-                #print("total time:{:.8f} total clock:{:.8f}".format(end0_time,end0_clock))
-            if split_model:
-                gpu_worker.stop()
-                cpu_worker.stop()
-    # End everything
-    fps.stop()
-    video_stream.stop()
-    cv2.destroyAllWindows()
-    print('[INFO] elapsed time (total): {:.2f}'.format(fps.elapsed()))
-    print('[INFO] approx. FPS: {:.2f}'.format(fps.fps()))
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+    finally:
+        running.value = False
+        fps.stop()
+        cv2.destroyAllWindows()
+        gpu_out_conn.close()
+        cpu_in_conn.close()
+        cpu_out_conn.close()
+        visualize_in_conn.close()
 
+    return
+
+def process_fps():
+    logging.debug("enter")
+    cfg = read_config()
+    video_input         = cfg['video_input']
+    visualize           = cfg['visualize']
+    vis_text            = cfg['vis_text']
+    execution_seconds   = cfg['execution_seconds']
+    width               = cfg['width']
+    height              = cfg['height']
+    fps_interval        = cfg['fps_interval']
+    allow_memory_growth = cfg['allow_memory_growth']
+    det_interval        = cfg['det_interval']
+    det_th              = cfg['det_th']
+    model_name          = cfg['model_name']
+    model_path          = cfg['model_path']
+    label_path          = cfg['label_path']
+    num_classes         = cfg['num_classes']
+    split_model         = cfg['split_model']
+    log_device          = cfg['log_device']
+    ssd_shape           = cfg['ssd_shape']
+
+    sleep_interval = 0.1
+    while running.value:
+        slept_time = 0
+        while running.value:
+            time.sleep(sleep_interval)
+            if slept_time >= fps_interval:
+                break
+            slept_time += sleep_interval
+        print("FPS:{:.1f}".format(frame_counter.value/float(fps_interval)))
+        frame_counter.value=0
+    return
+
+def process_stop():
+    logging.debug("enter")
+    cfg = read_config()
+    video_input         = cfg['video_input']
+    visualize           = cfg['visualize']
+    vis_text            = cfg['vis_text']
+    execution_seconds   = cfg['execution_seconds']
+    width               = cfg['width']
+    height              = cfg['height']
+    fps_interval        = cfg['fps_interval']
+    allow_memory_growth = cfg['allow_memory_growth']
+    det_interval        = cfg['det_interval']
+    det_th              = cfg['det_th']
+    model_name          = cfg['model_name']
+    model_path          = cfg['model_path']
+    label_path          = cfg['label_path']
+    num_classes         = cfg['num_classes']
+    split_model         = cfg['split_model']
+    log_device          = cfg['log_device']
+    ssd_shape           = cfg['ssd_shape']
+    if not visualize:
+        time.sleep(execution_seconds)
+        running.value = False
+    return
+
+'''
+プロセスによる実行関数の振り分け定義
+'''
+#PROCESS_LIST=['process_gpu','process_cpu','process_visualize','process_fps','process_stop']
+PROCESS_LIST=['process_gpu','process_cpu','process_visualize','process_stop']
+def do_process(target):
+    logging.debug("enter")
+
+    if target == 'process_gpu':
+        process_gpu()
+        return 'end '+target
+    if target == 'process_cpu':
+        process_cpu()
+        return 'end '+target
+    if target == 'process_visualize':
+        process_visualize()
+        return 'end '+target
+    if target == 'process_fps':
+        process_fps()
+        return 'end '+target
+    if target == 'process_stop':
+        process_stop()
+        return 'end '+target
+
+    return
+
+
+gpu_out_conn, cpu_in_conn = multiprocessing.Pipe()
+cpu_out_conn, visualize_in_conn = multiprocessing.Pipe()
+
+running = multiprocessing.Value(ctypes.c_bool,True)
+frame_counter = multiprocessing.Value(ctypes.c_int,0)
 
 def main():
+    logging.debug("enter")
     download_model()
-    graph, score, expand = load_frozenmodel()
-    category = load_labelmap()
-    detection(graph, category, score, expand)
+
+    try:
+        with futures.ProcessPoolExecutor(max_workers=len(PROCESS_LIST)) as executer:
+            mappings = {executer.submit(do_process,pname): pname for pname in PROCESS_LIST}
+            for i in futures.as_completed(mappings):
+                target = mappings[i]
+                result = i.result()
+                print(result)
+
+    except Exception as e:
+        print('error! executer failed.')
+        import traceback
+        traceback.print_exc()
+    finally:
+        running.value = False
+        gpu_out_conn.close()
+        cpu_in_conn.close()
+        cpu_out_conn.close()
+        visualize_in_conn.close()
+        print("executer end")
+
+    return
 
 
 if __name__ == '__main__':

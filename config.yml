@@ -3,6 +3,7 @@ video_input: 1              # Input Must be OpenCV readable
 visualize: True             # Disable for performance increase
 vis_text: True              # Display fps on visualization stream
 max_frames: 5000             # only used if visualize==False
+execution_seconds: 60       # only used if visualize==False
 width: 160                  # OpenCV only supports 4:3 formats others will be converted
 height: 120                 # 600x600 leads to 640x480
 fps_interval: 5             # Interval [s] to print fps of the last interval in console
