@@ -82,7 +82,7 @@ def download_model():
     else:
         print('Model found. Proceed.')
 
-# Used in GPU/CPU prosess
+# Used in GPU/CPU process
 # helper function for split model
 def _node_name(n):
   if n.startswith("^"):
@@ -90,7 +90,7 @@ def _node_name(n):
   else:
     return n.split(":")[0]
 
-# Used in GPU/CPU prosess
+# Used in GPU/CPU process
 # Load a (frozen) Tensorflow model into memory.
 def load_frozenmodel():
     print('Loading frozen model into memory')
@@ -179,7 +179,7 @@ def load_frozenmodel():
         return detection_graph, score, expand
 
 
-# Used in CPU prosess
+# Used in Visualize process
 def load_labelmap():
     print('Loading label map')
     label_map = label_map_util.load_labelmap(label_path)
@@ -188,7 +188,7 @@ def load_labelmap():
     return category_index
 
 
-# Used in GPU prosess
+# Used in GPU process
 def process_gpu():
     logging.debug("enter")
 
@@ -265,7 +265,7 @@ def process_gpu():
                 cpu_out_conn.close()
                 visualize_in_conn.close()
 
-# Used in CPU prosess
+# Used in CPU process
 def process_cpu():
     logging.debug("enter")
 
@@ -335,6 +335,7 @@ def process_cpu():
                 visualize_in_conn.close()
     return
 
+# Used in VISUALIZE process
 def process_visualize():
     logging.debug("enter")
 
@@ -408,6 +409,7 @@ def process_visualize():
 
     return
 
+# Used in FPS process
 def process_fps():
     logging.debug("enter")
     cfg = read_config()
@@ -441,6 +443,7 @@ def process_fps():
         frame_counter.value=0
     return
 
+# Used in STOP process
 def process_stop():
     logging.debug("enter")
     cfg = read_config()

@@ -15,7 +15,7 @@ forked from GustavZ/realtime_object_detection: [https://github.com/GustavZ/realt
 * Jetson TX2
   * JetPack 3.2
     * Python 3.6
-    * OpenCV 3.4.0/Tensorflow 1.6.0
+    * OpenCV 3.4.1/Tensorflow 1.6.0
   * JetPack 3.1
     * Python 3.6
     * OpenCV 3.3.1/Tensorflow 1.4.1 (Main)
