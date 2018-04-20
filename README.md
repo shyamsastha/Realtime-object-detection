@@ -1,4 +1,4 @@
-# Tensorflow realtime_object_detection on Jetson TX2
+# Tensorflow realtime_object_detection on Jetson TX2/TX1
 
 ## About this repository
 forked from GustavZ/realtime_object_detection: [https://github.com/GustavZ/realtime_object_detection](https://github.com/GustavZ/realtime_object_detection)
@@ -16,11 +16,16 @@ forked from GustavZ/realtime_object_detection: [https://github.com/GustavZ/realt
   * JetPack 3.2
     * Python 3.6
     * OpenCV 3.4.1/Tensorflow 1.6.0
+    * OpenCV 3.4.1/Tensorflow 1.7.0
   * JetPack 3.1
     * Python 3.6
     * OpenCV 3.3.1/Tensorflow 1.4.1 (Main)
     * OpenCV 3.4.0/Tensorflow 1.5.0
     * OpenCV 3.4.0/Tensorflow 1.6.0
+* Jetson TX1
+  * JetPack 3.2
+    * Python 3.6
+    * OpenCV 3.4.1/Tensorflow 1.6.0
 
 <br />
 
@@ -57,6 +62,8 @@ sudo nvpmodel -q --verbose
 | 36 | Multi-Thread | Max-P ARM | 50-59% | 12.1W | 0.21A | 21.9VA | roadsign_frozen_inference_graph_v1_2nd_4k.pb | 4 |
 | 35 | Multi-Process | Max-N | 0-64% | 14.7W | 0.25A | 25.4VA | roadsign_frozen_inference_graph_v1_2nd_4k.pb | 4 |
 | 33 | Multi-Process | Max-P ARM | 49-55% | 11.6W | 0.20A | 20.1VA | roadsign_frozen_inference_graph_v1_2nd_4k.pb | 4 |
+
+TX1 Multi-Thread is 25-26 FPS.
 
 ![](./document/ssd_mobilenet_160x120.png)<br>
 
