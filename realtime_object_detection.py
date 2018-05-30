@@ -17,7 +17,7 @@ from tensorflow.core.framework import graph_pb2
 #os.system('protoc object_detection/protos/*.proto --python_out=.')
 
 from object_detection.utils import label_map_util
-from object_detection.utils import visualization_utils as vis_util
+from object_detection.utils import visualization_utils_cv2 as vis_util
 from stuff.helper import FPS2, WebcamVideoStream
 import logging
 import time
