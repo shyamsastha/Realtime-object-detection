@@ -76,9 +76,9 @@ TX1 Multi-Thread is 25-26 FPS.
 
 Movie's FPS is little bit slow down. Because run ssd_movilenet_v1 with desktop capture.<br>
 Capture command:<br>
-'''
+```
 gst-launch-1.0 -v ximagesrc use-damage=0 ! nvvidconv ! 'video/x-raw(memory:NVMM),alignment=(string)au,format=(string)I420,framerate=(fraction)25/1,pixel-aspect-ratio=(fraction)1/1' ! omxh264enc !  'video/x-h264,stream-format=(string)byte-stream' ! h264parse ! avimux ! filesink location=capture.avi
-'''
+```
 
 ## Training ssd_mobilenet with own data
 [https://github.com/naisy/train_ssd_mobilenet](https://github.com/naisy/train_ssd_mobilenet)
