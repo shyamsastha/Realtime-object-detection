@@ -19,9 +19,9 @@ forked from GustavZ/realtime_object_detection: [https://github.com/GustavZ/realt
     * OpenCV 3.4.1/Tensorflow 1.7.0
   * JetPack 3.1
     * Python 3.6
-    * OpenCV 3.3.1/Tensorflow 1.4.1 (Main)
+    * OpenCV 3.3.1/Tensorflow 1.4.1
     * OpenCV 3.4.0/Tensorflow 1.5.0
-    * OpenCV 3.4.0/Tensorflow 1.6.0
+    * OpenCV 3.4.1/Tensorflow 1.6.0 (Main)
 * Jetson TX1
   * JetPack 3.2
     * Python 3.6
@@ -67,6 +67,18 @@ TX1 Multi-Thread is 25-26 FPS.
 
 ![](./document/ssd_mobilenet_160x120.png)<br>
 
+
+## Youtube
+#### TX2 movie
+[![TX2](https://img.youtube.com/vi/554GqG21c8M/1.jpg)](https://www.youtube.com/watch?v=554GqG21c8M)
+#### TX1 movie
+[![TX1](https://img.youtube.com/vi/S4tozDI5ncY/3.jpg)](https://www.youtube.com/watch?v=S4tozDI5ncY)
+
+Movie's FPS is little bit slow down. Because run ssd_movilenet_v1 with desktop capture.<br>
+Capture command:<br>
+```
+gst-launch-1.0 -v ximagesrc use-damage=0 ! nvvidconv ! 'video/x-raw(memory:NVMM),alignment=(string)au,format=(string)I420,framerate=(fraction)25/1,pixel-aspect-ratio=(fraction)1/1' ! omxh264enc !  'video/x-h264,stream-format=(string)byte-stream' ! h264parse ! avimux ! filesink location=capture.avi
+```
 
 ## Training ssd_mobilenet with own data
 [https://github.com/naisy/train_ssd_mobilenet](https://github.com/naisy/train_ssd_mobilenet)
