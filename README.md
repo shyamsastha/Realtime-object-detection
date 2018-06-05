@@ -69,9 +69,11 @@ TX1 Multi-Thread is 25-26 FPS.
 
 
 ## Youtube
-#### TX2 movie
+#### Object Detection vs Semantic Segmentation on TX2
+[![TX2](https://img.youtube.com/vi/p4EeF0LGcw8/1.jpg)](https://www.youtube.com/watch?v=p4EeF0LGcw8)
+#### Realtime Object Detection on TX2
 [![TX2](https://img.youtube.com/vi/554GqG21c8M/1.jpg)](https://www.youtube.com/watch?v=554GqG21c8M)
-#### TX1 movie
+#### Realtime Object Detection on TX1
 [![TX1](https://img.youtube.com/vi/S4tozDI5ncY/3.jpg)](https://www.youtube.com/watch?v=S4tozDI5ncY)
 
 Movie's FPS is little bit slow down. Because run ssd_movilenet_v1 with desktop capture.<br>
