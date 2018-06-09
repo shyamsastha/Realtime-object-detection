@@ -92,7 +92,9 @@ def load_frozenmodel():
         # load a frozen Model and split it into GPU and CPU graphs
         # Hardcoded for ssd_mobilenet
         input_graph = tf.Graph()
-        with tf.Session(graph=input_graph):
+        config = tf.ConfigProto()
+        config.gpu_options.allow_growth = allow_memory_growth
+        with tf.Session(graph=input_graph, config=config):
             if ssd_shape == 600:
                 shape = 7326
             else:
