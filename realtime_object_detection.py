@@ -18,7 +18,7 @@ from tensorflow.core.framework import graph_pb2
 
 from object_detection.utils import label_map_util
 from object_detection.utils import visualization_utils_cv2 as vis_util
-from stuff.helper import FPS2, WebcamVideoStream
+from stuff.helper import WebcamVideoStream
 import logging
 import time
 
@@ -26,7 +26,7 @@ from concurrent import futures
 import multiprocessing
 import ctypes
 
-logging.basicConfig(level=logging.INFO,
+logging.basicConfig(level=logging.DEBUG,
                     format='[%(levelname)s] time:%(created).8f pid:%(process)d pn:%(processName)-10s tid:%(thread)d tn:%(threadName)-10s fn:%(funcName)-10s %(message)s',
 )
 
@@ -236,7 +236,6 @@ def process_gpu():
             video_stream = WebcamVideoStream(video_input,width,height).start()
             print('Starting Detection')
             #skip_counter = 0
-            #fps = FPS2(fps_interval).start()
             try:
                 while video_stream.isActive():
                     if not running.value:
@@ -253,14 +252,11 @@ def process_gpu():
                     results = sess.run(gpu_opts,feed_dict=gpu_feeds)
                     # send result to conn
                     gpu_out_conn.send({"results":results,"extras":gpu_extras})
-                    #fps.update()
-                    #print("GPU FPS:{:.1f} Skip:{}".format(fps.fps_local(),skip_counter))
             except Exception as e:
                 import traceback
                 traceback.print_exc()
             finally:
                 running.value = False
-                #fps.stop()
                 video_stream.stop()
                 gpu_out_conn.close()
                 cpu_in_conn.close()
@@ -311,7 +307,6 @@ def process_cpu():
             cpu_opts = [detection_boxes, detection_scores, detection_classes, num_detections]
 
             #skip_counter = 0
-            #fps = FPS2(fps_interval).start()
             try:
                 while running.value:
                     g = cpu_in_conn.recv()
@@ -323,14 +318,11 @@ def process_cpu():
                     # send result to conn
                     cpu_out_conn.send({"results":results,"extras":cpu_extras})
                     #frame_counter.value += 1
-                    #fps.update()
-                    #print("CPU FPS:{:.1f} Skip:{}".format(fps.fps_local(),skip_counter))
             except Exception as e:
                 import traceback
                 traceback.print_exc()
             finally:
                 running.value = False
-                #fps.stop()
                 gpu_out_conn.close()
                 cpu_in_conn.close()
                 cpu_out_conn.close()
@@ -361,8 +353,7 @@ def process_visualize():
     ssd_shape           = cfg['ssd_shape']
 
     category_index = load_labelmap()
-    cur_frames = 0
-    fps = FPS2(fps_interval).start()
+    before_time = time.time()
     try:
         while running.value:
             c = visualize_in_conn.recv()
@@ -380,9 +371,9 @@ def process_visualize():
                     use_normalized_coordinates=True,
                     line_thickness=8)
                 if vis_text:
-                    fps.update()
-                    cv2.putText(image,"fps: {}".format(fps.fps_local()), (10,30),
+                    cv2.putText(image,"fps: {:.1f}".format(1.0/(time.time() - before_time)), (10,30),
                                 cv2.FONT_HERSHEY_SIMPLEX, 0.75, (77, 255, 9), 2)
+                    before_time = time.time() # start next FPS time count
                 cv2.imshow('object_detection', image)
                 # Exit Option
                 if cv2.waitKey(1) & 0xFF == ord('q'):
@@ -390,19 +381,18 @@ def process_visualize():
                     c = visualize_in_conn.recv()
                     break
             else:
-                cur_frames += 1
                 # Exit after max frames if no visualization
-                if cur_frames%det_interval==0:
+                if frame_counter.value%det_interval==0:
                     for box, score, _class in zip(np.squeeze(boxes), np.squeeze(scores), np.squeeze(classes)):
                         if score > det_th:
                             label = category_index[_class]['name']
                             print("label: {}\nscore: {}\nbox: {}".format(label, score, box))
+            frame_counter.value += 1
     except Exception as e:
         import traceback
         traceback.print_exc()
     finally:
         running.value = False
-        fps.stop()
         cv2.destroyAllWindows()
         gpu_out_conn.close()
         cpu_in_conn.close()
@@ -434,15 +424,25 @@ def process_fps():
     ssd_shape           = cfg['ssd_shape']
 
     sleep_interval = 0.1
-    while running.value:
-        slept_time = 0
+    fps_value = 0.0
+    try:
         while running.value:
-            time.sleep(sleep_interval)
-            if slept_time >= fps_interval:
-                break
-            slept_time += sleep_interval
-        print("FPS:{:.1f}".format(frame_counter.value/float(fps_interval)))
-        frame_counter.value=0
+            slept_time = 0
+            before_sleep_time = time.time()
+            wakeup_time = before_sleep_time + fps_interval
+            while running.value:
+                time.sleep(sleep_interval)
+                now_time = time.time()
+                if now_time >= wakeup_time:
+                    break
+            slept_time = now_time - before_sleep_time
+            fps_value = float(frame_counter.value)/float(slept_time)
+            print("FPS:{:.1f}, Frames:{} Sec.:{}".format(fps_value, frame_counter.value, slept_time))
+            frame_counter.value=0
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+
     return
 
 # Used in STOP process
@@ -475,7 +475,7 @@ def process_stop():
 プロセスによる実行関数の振り分け定義
 '''
 #PROCESS_LIST=['process_gpu','process_cpu','process_visualize','process_fps','process_stop']
-PROCESS_LIST=['process_gpu','process_cpu','process_visualize','process_stop']
+PROCESS_LIST=['process_gpu','process_cpu','process_visualize','process_fps','process_stop']
 def do_process(target):
     logging.debug("enter")
 
