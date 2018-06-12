@@ -437,7 +437,7 @@ def process_fps():
                     break
             slept_time = now_time - before_sleep_time
             fps_value = float(frame_counter.value)/float(slept_time)
-            print("FPS:{:.1f}, Frames:{} Sec.:{}".format(fps_value, frame_counter.value, slept_time))
+            print("FPS:{:.1f} Frames:{} Sec.:{}".format(fps_value, frame_counter.value, slept_time))
             frame_counter.value=0
     except Exception as e:
         import traceback
