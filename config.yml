@@ -2,7 +2,7 @@
 video_input: 1              # Input Must be OpenCV readable 
 visualize: True             # Disable for performance increase
 vis_text: True              # Display fps on visualization stream
-max_frames: 5000             # only used if visualize==False
+max_frames: 5000            # only used if visualize==False
 execution_seconds: 60       # only used if visualize==False
 width: 160                  # OpenCV only supports 4:3 formats others will be converted
 height: 120                 # 600x600 leads to 640x480
@@ -15,7 +15,8 @@ allow_memory_growth: True   # limits memory allocation to the actual needs
 image_path: 'test_images'   # used for image_detection.pyq
 convert_rgb: True           # Converts BGR to RGB color (idk how it ever worked without this)
 ssd_shape: 300              # used for the split model algorithm
-                            # currently only supports ssd networks trained on 300x300 and 600x600 input 
+                            # currently only supports ssd networks trained on 300x300 and 600x600 input
+debug_mode: False           # Show FPS spike value
 
 # Change only if you use another model
 model_name: 'ssd_mobilenet_v1_coco'

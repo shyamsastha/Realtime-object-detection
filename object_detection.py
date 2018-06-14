@@ -1,9 +1,20 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
 Created on Thu Dec 21 12:01:40 2017
-
 @author: GustavZ
+
+This code based on object_detection.py of GustavZ.
+https://github.com/GustavZ/realtime_object_detection
+
+Updates:
+
+- FPS separate to multi-processing
+- FPS streaming calculation
+- FPS is average of fps_interval (in fps_stream)
+- FPS updates every 0.2 sec. (in fps_snapshot)
+
+- solve: Multiple session cannot launch problem. tensorflow.python.framework.errors_impl.InternalError: Failed to create session.
 """
 import numpy as np
 import os
@@ -20,18 +31,28 @@ from tensorflow.core.framework import graph_pb2
 
 from object_detection.utils import label_map_util
 from object_detection.utils import visualization_utils_cv2 as vis_util
-from stuff.helper import FPS2, WebcamVideoStream, SessionWorker
+from stuff.helper import WebcamVideoStream, SessionWorker
 
+from concurrent import futures
+import multiprocessing
+import ctypes
+import logging
 import time
+import sys
 
-## LOAD CONFIG PARAMS ##
-if (os.path.isfile('config.yml')):
-    with open("config.yml", 'r') as ymlfile:
-        cfg = yaml.load(ymlfile)
-else:
-    with open("config.sample.yml", 'r') as ymlfile:
-        cfg = yaml.load(ymlfile)
 
+def load_config():
+    logging.debug("enter")
+    global cfg
+    if (os.path.isfile('config.yml')):
+        with open("config.yml", 'r') as ymlfile:
+            cfg = yaml.load(ymlfile)
+    else:
+        with open("config.sample.yml", 'r') as ymlfile:
+            cfg = yaml.load(ymlfile)
+    return cfg
+
+cfg = load_config()
 video_input         = cfg['video_input']
 visualize           = cfg['visualize']
 vis_text            = cfg['vis_text']
@@ -49,7 +70,13 @@ num_classes         = cfg['num_classes']
 split_model         = cfg['split_model']
 log_device          = cfg['log_device']
 ssd_shape           = cfg['ssd_shape']
+debug_mode          = cfg['debug_mode']
 
+if debug_mode:
+    np.set_printoptions(precision=5, suppress=True, threshold=np.inf)  # suppress scientific float notation
+    logging.basicConfig(level=logging.DEBUG,
+                        format='[%(levelname)s] time:%(created).8f pid:%(process)d pn:%(processName)-10s tid:%(thread)d tn:%(threadName)-10s fn:%(funcName)-10s %(message)s',
+    )
 
 # Download Model form TF's Model Zoo
 def download_model():
@@ -178,7 +205,6 @@ def detection(detection_graph, category_index, score, expand):
     # Session Config: allow seperate GPU/CPU adressing and limit memory allocation
     config = tf.ConfigProto(allow_soft_placement=True, log_device_placement=log_device)
     config.gpu_options.allow_growth=allow_memory_growth
-    cur_frames = 0
     with detection_graph.as_default():
         with tf.Session(graph=detection_graph,config=config) as sess:
             # Define Input and Ouput tensors
@@ -199,10 +225,9 @@ def detection(detection_graph, category_index, score, expand):
                 cpu_opts = [detection_boxes, detection_scores, detection_classes, num_detections]
                 gpu_counter = 0
                 cpu_counter = 0
-            # Start Video Stream and FPS calculation
-            fps = FPS2(fps_interval).start()
+            # Start Video Stream
             video_stream = WebcamVideoStream(video_input,width,height).start()
-            cur_frames = 0
+            cur_frame = 0
             print("Press 'q' to Exit")
             print('Starting Detection')
             while video_stream.isActive():
@@ -265,39 +290,233 @@ def detection(detection_graph, category_index, score, expand):
                         use_normalized_coordinates=True,
                         line_thickness=8)
                     if vis_text:
-                        cv2.putText(image,"fps: {}".format(fps.fps_local()), (10,30),
-                                    cv2.FONT_HERSHEY_SIMPLEX, 0.75, (77, 255, 9), 2)
+                        if not debug_mode:
+                            cv2.putText(image,"fps: {:.1f}".format(fps.value), (10,30),
+                                        cv2.FONT_HERSHEY_SIMPLEX, 0.75, (77, 255, 9), 2)
+                        else:
+                            """ FOR PERFORMANCE DEBUG """
+                            cv2.putText(image,"fps: {:.1f} 0.2sec".format(fps_spike.value), (10,30),
+                                        cv2.FONT_HERSHEY_SIMPLEX, 0.75, (77, 255, 9), 2)
+                            cv2.putText(image,"fps: {:.1f} {}sec".format(fps.value, fps_interval), (10,60),
+                                        cv2.FONT_HERSHEY_SIMPLEX, 0.75, (77, 255, 9), 2)
                     cv2.imshow('object_detection', image)
                     # Exit Option
                     if cv2.waitKey(1) & 0xFF == ord('q'):
                         break
                 else:
-                    cur_frames += 1
                     # Exit after max frames if no visualization
                     for box, score, _class in zip(np.squeeze(boxes), np.squeeze(scores), np.squeeze(classes)):
-                        if cur_frames%det_interval==0 and score > det_th:
+                        if cur_frame%det_interval==0 and score > det_th:
                             label = category_index[_class]['name']
                             print("label: {}\nscore: {}\nbox: {}".format(label, score, box))
-                    if cur_frames >= max_frames:
+                    if cur_frame >= max_frames:
                         break
-                fps.update()
+                    cur_frame += 1
+                frame_counter.value += 1
 
     # End everything
     if split_model:
         gpu_worker.stop()
         cpu_worker.stop()
-    fps.stop()
     video_stream.stop()
     cv2.destroyAllWindows()
-    print('[INFO] elapsed time (total): {:.2f}'.format(fps.elapsed()))
-    print('[INFO] approx. FPS: {:.2f}'.format(fps.fps()))
 
+
+def object_detection():
+    try:
+        download_model()
+        graph, score, expand = load_frozenmodel()
+        category = load_labelmap()
+        detection(graph, category, score, expand)
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+    finally:
+        running.value = False
+    return
+
+# Used in FPS process
+def process_fps():
+    """
+    frame_counter.value: Frame counter value shared by processes.
+    update fps by 0.2 sec
+    """
+    logging.debug("enter")
+
+    cfg = load_config()
+    fps_interval = cfg['fps_interval']
+    debug_mode = cfg['debug_mode']
+
+    sleep_interval = 1.0 / 50.0 # Wakeup and time checks N times per sec.
+    update_interval = 1.0 / 5.0 # FPS calculate N times per sec. (must update_interval >= sleep_interval)
+    fps_stream_length = fps_interval # FPS stream seconds length. FPS is the frames per second processed during the most recent this time.
+    fps_stream = [] # Array of fps_snapshot during fps_stream_length
+    fps_snapshot = None # One array (frames_in_interval, interval_seconds, realtime) per update_interval
+
+    if debug_mode:
+        """ FOR PERFORMANCE DEBUG """
+        spike_fps = 0
+        min_spike_fps = 10000
+        max_spike_fps = 0
+        min_spike_snapshot = []
+        max_spike_snapshot = []
+        """ """
+    try:
+        launch_time = time.time()
+        while running.value and frame_counter.value == 0:
+            time.sleep(sleep_interval)
+        print("Time to first image:{}".format(time.time() - launch_time))
+
+        previos_work_time = time.time()
+        while running.value:
+            time.sleep(sleep_interval)
+            now_time = time.time()
+            if now_time >= previos_work_time + update_interval:
+                ### FPS update by update_interval ###
+                snapshot_frames = frame_counter.value
+                frame_counter.value = 0
+
+                """
+                FPS stream
+                """
+                snapshot_seconds = now_time - previos_work_time
+                fps_snapshot = (snapshot_frames, snapshot_seconds, now_time)
+                fps_stream += [fps_snapshot]
+                if debug_mode:
+                    """
+                    FOR PERFORMANCE DEBUG
+                    FPS snapshot calculation
+                    """
+                    spike_fps = snapshot_frames/snapshot_seconds
+                    fps_spike.value = spike_fps # FPS of snapshot. for visualize
+                    if min_spike_fps >= spike_fps:
+                        min_spike_fps = spike_fps
+                        min_spike_snapshot += [fps_snapshot]
+                        print("min_spike:{:.1f} {}".format(spike_fps, fps_snapshot))
+                    if max_spike_fps <= spike_fps:
+                        max_spike_fps = spike_fps
+                        max_spike_snapshot += [fps_snapshot]
+                        print("max_spike:{:.1f} {}".format(spike_fps, fps_snapshot))
+                    """ """
+
+                while running.value:
+                    (min_frame, min_seconds, min_time) = fps_stream[0]
+                    if now_time - min_time > fps_stream_length:
+                        """
+                        drop old snapshot
+                        """
+                        fps_stream.pop(0)
+                    else:
+                        """
+                        goto FPS calculate
+                        """
+                        break
+                if(len(fps_stream) > 0):
+                    """
+                    FPS streaming calculation
+                    count frames and seconds in stream
+                    """
+                    np_fps_stream = np.array(fps_stream)
+                    np_fps_stream = np_fps_stream[:,:2]
+                    np_fps = np.sum(np_fps_stream, axis=0) # [total_frames, total_seconds] duaring fps_stream_length
+
+                    """
+                    insert local values to shared variables
+                    """
+                    fps_frames.value = int(np_fps[0]) # for console output
+                    fps_seconds.value = np_fps[1]     # for console output
+                    fps.value = np_fps[0]/np_fps[1]   # for visualize and console
+                else:
+                    fps_frames.value = 0
+                    fps_seconds.value = -1 # for toooooooo slow fps check. if -1 sec appears, fps_stream_length should set more long time.
+                    fps.value = 0
+                previos_work_time = now_time
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+    finally:
+        running.value = False
+        if debug_mode:
+            print("min_spike_fps:{:.1f}".format(min_spike_fps))
+            print("{}".format(min_spike_snapshot))
+            print("max_spike_fps:{:.1f}".format(max_spike_fps))
+            print("{}".format(max_spike_snapshot))
+
+    return
+
+# Used in FPS console process
+def process_fps_console():
+    """
+    print fps by fps_interval sec.
+    """
+    logging.debug("enter")
+    cfg = load_config()
+    fps_interval = cfg['fps_interval']
+
+    sleep_interval = 1.0 / 50.0 # Wakeup and time checks N times per sec.
+
+    try:
+        while running.value and frame_counter.value == 0:
+            time.sleep(sleep_interval)
+
+        previos_work_time = time.time()
+        while running.value:
+            time.sleep(sleep_interval)
+            now_time = time.time()
+            if now_time >= previos_work_time + fps_interval:
+                """
+                FPS console by fps_interval
+                """
+                frames = fps_frames.value
+                seconds = fps_seconds.value
+                print("FPS:{:.1f} Frames:{} Seconds:{}".format(fps.value, fps_frames.value, fps_seconds.value))
+                previos_work_time = now_time
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+    finally:
+        running.value = False
+    return
+
+
+PROCESS_LIST=['process_fps','process_fps_console']
+def do_process(target):
+    logging.debug("enter")
+
+    if target == 'process_fps':
+        process_fps()
+        return 'end '+target
+    if target == 'process_fps_console':
+        process_fps_console()
+        return 'end '+target
+
+    return
+
+running = multiprocessing.Value(ctypes.c_bool,True)
+frame_counter = multiprocessing.Value(ctypes.c_int,0)
+fps = multiprocessing.Value(ctypes.c_float,0.0)
+fps_frames = multiprocessing.Value(ctypes.c_int,0)
+fps_seconds = multiprocessing.Value(ctypes.c_float,0.0)
+if debug_mode:
+    fps_spike = multiprocessing.Value(ctypes.c_float,0.0) # FOR PAFORMANCE DEBUG
 
 def main():
-    download_model()
-    graph, score, expand = load_frozenmodel()
-    category = load_labelmap()
-    detection(graph, category, score, expand)
+    try:
+        with futures.ProcessPoolExecutor(max_workers=len(PROCESS_LIST)) as executer:
+            mappings = {executer.submit(do_process,pname): pname for pname in PROCESS_LIST}
+            """ start object_detection """
+            object_detection()
+            for i in futures.as_completed(mappings):
+                target = mappings[i]
+                result = i.result()
+                print(result)
+
+    except Exception as e:
+        print('error! executer failed.')
+        import traceback
+        traceback.print_exc()
+    finally:
+        print("executer end")
 
 
 if __name__ == '__main__':
