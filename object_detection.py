@@ -251,9 +251,9 @@ def detection(detection_graph, category_index, score, expand):
                         # put new queue
                         gpu_feeds = {image_tensor: image_expanded}
                         if visualize:
-                            gpu_extras = image # for visualization frame
+                            gpu_extras = {"image":image} # for visualization frame
                         else:
-                            gpu_extras = None
+                            gpu_extras = {}
                         gpu_worker.put_sess_queue(gpu_opts,gpu_feeds,gpu_extras)
 
                     g = gpu_worker.get_result_queue()
@@ -263,13 +263,13 @@ def detection(detection_graph, category_index, score, expand):
                     else:
                         # gpu thread has output queue.
                         gpu_counter = 0
-                        score,expand,image = g["results"][0],g["results"][1],g["extras"]
+                        score,expand,extras = g["results"][0],g["results"][1],g["extras"]
 
                         if cpu_worker.is_sess_empty():
                             # When cpu thread has no next queue, put new queue.
                             # else, drop gpu queue.
                             cpu_feeds = {score_in: score, expand_in: expand}
-                            cpu_extras = image
+                            cpu_extras = extras
                             cpu_worker.put_sess_queue(cpu_opts,cpu_feeds,cpu_extras)
 
                     c = cpu_worker.get_result_queue()
@@ -280,7 +280,9 @@ def detection(detection_graph, category_index, score, expand):
                         continue # If CPU RESULT has not been set yet, no fps update
                     else:
                         cpu_counter = 0
-                        boxes, scores, classes, num, image = c["results"][0],c["results"][1],c["results"][2],c["results"][3],c["extras"]
+                        boxes, scores, classes, num, extras = c["results"][0],c["results"][1],c["results"][2],c["results"][3],c["extras"]
+                        if visualize:
+                            image = extras["image"]
                 else:
                     # default session
                     image = video_stream.read()
