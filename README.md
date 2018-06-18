@@ -5,23 +5,43 @@ forked from GustavZ/realtime_object_detection: [https://github.com/GustavZ/realt
 
 ## Getting Started:
 - login Jetson TX2 `ssh -C -Y ubuntu@xxx.xxx.xxx.xxx`
-- run `python object_detection.py` realtime object detection (Multi-Thread)
+- run `python run_ssd_mobilenet_v1.py` realtime object detection (Multi-Thread)
 - run `python realtime_object_detection.py` realtime object detection (Multi-Process)
 - wait few minuts.
 - Multi-Thread is better performance. Multi-Process bottleneck is interprocess communication.
 <br />
 
+## Updates:
+- Multiprocessing version corresponds to python 3.6 and python 2.7.
+- Parallel run to complete JIT. : Improve startup time from 90sec to 78sec.
+- Add time details.             : To understand the processing time well.
+
+- Separate split and non-split code.     : Remove unused session from split code.
+- Remove Session from load frozen graph. : Reduction of memory usage.
+
+- Flexible sleep_interval.          : Maybe speed up on high spec PC.
+- FPS separate to multi-processing. : Speed up.
+- FPS streaming calculation.        : Flat fps.
+- FPS is average of fps_interval.   : Flat fps.
+- FPS updates every 0.2 sec.        : Flat fps.
+
+- solve: Multiple session cannot launch problem. tensorflow.python.framework.errors_impl.InternalError: Failed to create session.
+
 ## My Setup:
 * Jetson TX2
-  * JetPack 3.2
+  * JetPack 3.2/3.2.1
     * Python 3.6
     * OpenCV 3.4.1/Tensorflow 1.6.0
-    * OpenCV 3.4.1/Tensorflow 1.7.0
+    * OpenCV 3.4.1/Tensorflow 1.6.1
+    * OpenCV 3.4.1/Tensorflow 1.7.0 (slow)
+    * OpenCV 3.4.1/Tensorflow 1.7.1 (slow)
+    * OpenCV 3.4.1/Tensorflow 1.8.0 (slow)
   * JetPack 3.1
     * Python 3.6
     * OpenCV 3.3.1/Tensorflow 1.4.1
     * OpenCV 3.4.0/Tensorflow 1.5.0
-    * OpenCV 3.4.1/Tensorflow 1.6.0 (Main)
+    * OpenCV 3.4.1/Tensorflow 1.6.0
+    * OpenCV 3.4.1/Tensorflow 1.6.1 (Main)
 * Jetson TX1
   * JetPack 3.2
     * Python 3.6
