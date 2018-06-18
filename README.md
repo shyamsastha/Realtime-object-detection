@@ -5,15 +5,16 @@ forked from GustavZ/realtime_object_detection: [https://github.com/GustavZ/realt
 
 ## Getting Started:
 - login Jetson TX2 `ssh -C -Y ubuntu@xxx.xxx.xxx.xxx`
-- edit config.yml for your environment. (Ex. video_input: 0 # for PC)
-- run `python run_ssd_mobilenet_v1.py` realtime object detection (Multi-Thread)
-- run `python realtime_object_detection.py` realtime object detection (Multi-Process)
+- install pip packages. `pip install futures`
+- edit `config.yml` for your environment. (Ex. video_input: 0 # for PC)
+- run `python run_ssd_mobilenet_v1.py` realtime object detection (Multi-Threading)
+- run `python run_mp_ssd_mobilenet_v1.py` realtime object detection (Multi-Processing)
 - wait few minuts.
-- Multi-Thread is better performance. Multi-Process bottleneck is interprocess communication.
+- Multi-Threading is better performance. Multi-Processing bottleneck is interprocess communication.
 <br />
 
 ## Updates:
-- Multiprocessing version corresponds to python 3.6 and python 2.7.
+- Multi-Processing version corresponds to python 3.6 and python 2.7.
 - Parallel run to complete JIT. : Improve startup time from 90sec to 78sec.
 - Add time details.             : To understand the processing time well.
 
@@ -79,12 +80,12 @@ sudo nvpmodel -q --verbose
 ## Current max Performance on `ssd_mobilenet` (with visualization 160x120):
 | FPS | Multi | Mode | CPU | Watt | Ampere | Volt-Ampere | Model | classes |
 |:--|:--|:--|:--|:--|:--|:--|:--|:--|
-| 40 | Multi-Thread | Max-N | 27-55% | 15.6W | 0.27A | 27.8VA | roadsign_frozen_inference_graph_v1_2nd_4k.pb | 4 |
-| 36 | Multi-Thread | Max-P ARM | 50-59% | 12.1W | 0.21A | 21.9VA | roadsign_frozen_inference_graph_v1_2nd_4k.pb | 4 |
-| 35 | Multi-Process | Max-N | 0-64% | 14.7W | 0.25A | 25.4VA | roadsign_frozen_inference_graph_v1_2nd_4k.pb | 4 |
-| 33 | Multi-Process | Max-P ARM | 49-55% | 11.6W | 0.20A | 20.1VA | roadsign_frozen_inference_graph_v1_2nd_4k.pb | 4 |
+| 40 | Multi-Threading | Max-N | 27-55% | 15.6W | 0.27A | 27.8VA | roadsign_frozen_inference_graph_v1_2nd_4k.pb | 4 |
+| 36 | Multi-Threading | Max-P ARM | 50-59% | 12.1W | 0.21A | 21.9VA | roadsign_frozen_inference_graph_v1_2nd_4k.pb | 4 |
+| 35 | Multi-Processing | Max-N | 0-64% | 14.7W | 0.25A | 25.4VA | roadsign_frozen_inference_graph_v1_2nd_4k.pb | 4 |
+| 33 | Multi-Processing | Max-P ARM | 49-55% | 11.6W | 0.20A | 20.1VA | roadsign_frozen_inference_graph_v1_2nd_4k.pb | 4 |
 
-TX1 Multi-Thread is 25-26 FPS.
+TX1 Multi-Threading is 25-26 FPS.
 
 ![](./document/ssd_mobilenet_160x120.png)<br>
 
