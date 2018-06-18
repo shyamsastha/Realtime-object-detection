@@ -40,8 +40,13 @@ import logging
 import time
 import sys
 
-import copy_reg
 import types
+PY2 = sys.version_info[0] == 2
+PY3 = sys.version_info[0] == 3
+if PY2:
+    import copy_reg
+elif PY3:
+    import copyreg as copy_reg
 
 def _pickle_method(m):
     if m.im_self is None:

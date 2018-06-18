@@ -12,6 +12,7 @@ forked from GustavZ/realtime_object_detection: [https://github.com/GustavZ/realt
 <br />
 
 ## Updates:
+- Multiprocessing version corresponds to python 3.6 and python 2.7.
 - Parallel run to complete JIT. : Improve startup time from 90sec to 78sec.
 - Add time details.             : To understand the processing time well.
 

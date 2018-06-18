@@ -26,6 +26,22 @@ from concurrent import futures
 import multiprocessing
 import ctypes
 
+import sys
+import types
+PY2 = sys.version_info[0] == 2
+PY3 = sys.version_info[0] == 3
+if PY2:
+    import copy_reg
+elif PY3:
+    import copyreg as copy_reg
+
+def _pickle_method(m):
+    if m.im_self is None:
+        return getattr, (m.im_class, m.im_func.func_name)
+    else:
+        return getattr, (m.im_self, m.im_func.func_name)
+
+copy_reg.pickle(types.MethodType, _pickle_method)
 
 # Used in GPU/CPU process
 ## LOAD CONFIG PARAMS ##
