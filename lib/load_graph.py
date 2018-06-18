@@ -8,7 +8,6 @@ class LoadFrozenGraph():
     ssd_movilenet_v1 300x300
     """
     def __init__(self, cfg):
-        super(LoadFrozenGraph, self).__init__()
         self.cfg = cfg
         return
 

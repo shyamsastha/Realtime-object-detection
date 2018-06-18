@@ -9,7 +9,7 @@ import yaml
 import numpy as np
 
 from lib.mpfps import FPS
-from lib.detection import *
+from lib.detection import ssd_mobilenet_v1
 
 """
 Execute ssd_mobilenet_v1.
@@ -40,7 +40,6 @@ def load_config():
     LOAD CONFIG FILE
     Convert config.yml to DICT.
     """
-    logging.debug("enter")
     cfg = None
     if (os.path.isfile('config.yml')):
         with open("config.yml", 'r') as ymlfile:
