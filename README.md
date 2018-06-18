@@ -5,6 +5,7 @@ forked from GustavZ/realtime_object_detection: [https://github.com/GustavZ/realt
 
 ## Getting Started:
 - login Jetson TX2 `ssh -C -Y ubuntu@xxx.xxx.xxx.xxx`
+- edit config.yml for your environment. (Ex. video_input: 0 # for PC)
 - run `python run_ssd_mobilenet_v1.py` realtime object detection (Multi-Thread)
 - run `python realtime_object_detection.py` realtime object detection (Multi-Process)
 - wait few minuts.
