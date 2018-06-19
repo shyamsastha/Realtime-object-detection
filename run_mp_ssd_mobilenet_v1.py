@@ -121,23 +121,24 @@ def process_gpu():
     logging.debug("enter")
 
     cfg = load_config()
-    video_input         = cfg['video_input']
-    visualize           = cfg['visualize']
-    vis_text            = cfg['vis_text']
-    execution_seconds   = cfg['execution_seconds']
-    width               = cfg['width']
-    height              = cfg['height']
-    fps_interval        = cfg['fps_interval']
-    allow_memory_growth = cfg['allow_memory_growth']
-    det_interval        = cfg['det_interval']
-    det_th              = cfg['det_th']
-    model_name          = cfg['model_name']
-    model_path          = cfg['model_path']
-    label_path          = cfg['label_path']
-    num_classes         = cfg['num_classes']
-    split_model         = cfg['split_model']
-    log_device          = cfg['log_device']
-    ssd_shape           = cfg['ssd_shape']
+    video_input          = cfg['video_input']
+    visualize            = cfg['visualize']
+    vis_text             = cfg['vis_text']
+    execution_seconds    = cfg['execution_seconds']
+    width                = cfg['width']
+    height               = cfg['height']
+    fps_interval         = cfg['fps_interval']
+    allow_memory_growth  = cfg['allow_memory_growth']
+    det_interval         = cfg['det_interval']
+    det_th               = cfg['det_th']
+    model_name           = cfg['model_name']
+    model_path           = cfg['model_path']
+    label_path           = cfg['label_path']
+    num_classes          = cfg['num_classes']
+    split_model          = cfg['split_model']
+    log_device           = cfg['log_device']
+    ssd_shape            = cfg['ssd_shape']
+    force_gpu_compatible = cfg['force_gpu_compatible']
 
     print("GPU - Building Graph")
     load_frozen_graph = LoadFrozenGraph(cfg)
@@ -146,6 +147,7 @@ def process_gpu():
     # Session Config: allow seperate GPU/CPU adressing and limit memory allocation
     config = tf.ConfigProto(allow_soft_placement=True, log_device_placement=log_device)
     config.gpu_options.allow_growth=allow_memory_growth
+    config.gpu_options.force_gpu_compatible = force_gpu_compatible
     with graph.as_default():
         with tf.Session(config=config) as sess:
             # Define Input and Ouput tensors
@@ -197,23 +199,24 @@ def process_cpu():
     logging.debug("enter")
 
     cfg = load_config()
-    video_input         = cfg['video_input']
-    visualize           = cfg['visualize']
-    vis_text            = cfg['vis_text']
-    execution_seconds   = cfg['execution_seconds']
-    width               = cfg['width']
-    height              = cfg['height']
-    fps_interval        = cfg['fps_interval']
-    allow_memory_growth = cfg['allow_memory_growth']
-    det_interval        = cfg['det_interval']
-    det_th              = cfg['det_th']
-    model_name          = cfg['model_name']
-    model_path          = cfg['model_path']
-    label_path          = cfg['label_path']
-    num_classes         = cfg['num_classes']
-    split_model         = cfg['split_model']
-    log_device          = cfg['log_device']
-    ssd_shape           = cfg['ssd_shape']
+    video_input          = cfg['video_input']
+    visualize            = cfg['visualize']
+    vis_text             = cfg['vis_text']
+    execution_seconds    = cfg['execution_seconds']
+    width                = cfg['width']
+    height               = cfg['height']
+    fps_interval         = cfg['fps_interval']
+    allow_memory_growth  = cfg['allow_memory_growth']
+    det_interval         = cfg['det_interval']
+    det_th               = cfg['det_th']
+    model_name           = cfg['model_name']
+    model_path           = cfg['model_path']
+    label_path           = cfg['label_path']
+    num_classes          = cfg['num_classes']
+    split_model          = cfg['split_model']
+    log_device           = cfg['log_device']
+    ssd_shape            = cfg['ssd_shape']
+    force_gpu_compatible = cfg['force_gpu_compatible']
 
     print("CPU - Building Graph")
     load_frozen_graph = LoadFrozenGraph(cfg)
@@ -222,6 +225,7 @@ def process_cpu():
     # Session Config: allow seperate GPU/CPU adressing and limit memory allocation
     config = tf.ConfigProto(allow_soft_placement=True, log_device_placement=log_device)
     config.gpu_options.allow_growth=allow_memory_growth
+    config.gpu_options.force_gpu_compatible = force_gpu_compatible
     with graph.as_default():
         with tf.Session(config=config) as sess:
             # Define Input and Ouput tensors

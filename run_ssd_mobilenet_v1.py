@@ -90,7 +90,7 @@ def main():
         """
         LOG FORMAT MODE
         """
-        log_format(True)
+        log_format(debug_mode)
 
         """
         START DETECTION, FPS, FPS PRINT
