@@ -11,8 +11,8 @@ visualize: True             # Disable for performance increase
 vis_text: True              # Display fps on visualization stream
 max_frames: 5000            # only used if visualize==False
 execution_seconds: 60       # only used if visualize==False
-width: 160                  # OpenCV only supports 4:3 formats others will be converted
-height: 120                 # 600x600 leads to 640x480
+width: 1280                  # OpenCV only supports 4:3 formats others will be converted
+height: 720                 # 600x600 leads to 640x480
 fps_interval: 5             # Interval [s] to print fps of the last interval in console
 det_interval: 100           # intervall [frames] to print detections to console
 det_th: 0.5                 # detection threshold for det_intervall
@@ -29,11 +29,11 @@ debug_mode: False           # Show FPS spike value
 model_name: 'ssd_mobilenet_v1_coco'
 
 # mscoco
-#model_path: 'models/ssd_mobilenet_v11_coco/frozen_inference_graph.pb'
-#label_path: 'object_detection/data/mscoco_label_map.pbtxt'
-#num_classes: 90
+model_path: 'models/ssd_mobilenet_v11_coco/frozen_inference_graph.pb'
+label_path: 'object_detection/data/mscoco_label_map.pbtxt'
+num_classes: 90
 
 # own data
-model_path: 'models/ssd_mobilenet/roadsign_frozen_inference_graph_v1_2nd_4k.pb'
-label_path: 'models/ssd_mobilenet/roadsign_label_map.pbtxt'
-num_classes: 4
+#model_path: 'models/ssd_mobilenet/roadsign_frozen_inference_graph_v1_2nd_4k.pb'
+#label_path: 'models/ssd_mobilenet/roadsign_label_map.pbtxt'
+#num_classes: 4

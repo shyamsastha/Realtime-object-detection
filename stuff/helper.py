@@ -223,7 +223,8 @@ class SessionWorker():
         except:
             import traceback
             traceback.print_exc()
-        self.stop()
+        finally:
+            self.stop()
         return
 
     def is_sess_empty(self):

@@ -57,23 +57,25 @@ def visualization(category_index, image, boxes, scores, classes, debug_mode, vis
 
 
 def ssd_mobilenet_v1_without_split(cfg, category_index, graph):
-    video_input         = cfg['video_input']
-    visualize           = cfg['visualize']
-    vis_text            = cfg['vis_text']
-    max_frames          = cfg['max_frames']
-    allow_memory_growth = cfg['allow_memory_growth']
-    width               = cfg['width']
-    height              = cfg['height']
-    det_interval        = cfg['det_interval']
-    det_th              = cfg['det_th']
-    num_classes         = cfg['num_classes']
-    log_device          = cfg['log_device']
-    fps_interval        = cfg['fps_interval']
-    debug_mode          = cfg['debug_mode']
+    video_input          = cfg['video_input']
+    visualize            = cfg['visualize']
+    vis_text             = cfg['vis_text']
+    max_frames           = cfg['max_frames']
+    allow_memory_growth  = cfg['allow_memory_growth']
+    width                = cfg['width']
+    height               = cfg['height']
+    det_interval         = cfg['det_interval']
+    det_th               = cfg['det_th']
+    num_classes          = cfg['num_classes']
+    log_device           = cfg['log_device']
+    fps_interval         = cfg['fps_interval']
+    debug_mode           = cfg['debug_mode']
+    force_gpu_compatible = cfg['force_gpu_compatible']
 
     # Session Config: allow seperate GPU/CPU adressing and limit memory allocation
     config = tf.ConfigProto(allow_soft_placement=True, log_device_placement=log_device)
     config.gpu_options.allow_growth = allow_memory_growth
+    config.gpu_options.force_gpu_compatible = force_gpu_compatible
 
     # Define Input and Ouput tensors
     image_tensor = graph.get_tensor_by_name('image_tensor:0')
@@ -111,6 +113,7 @@ def ssd_mobilenet_v1_without_split(cfg, category_index, graph):
                 else:
                     without_visualization(category_index, boxes, scores, classes, cur_frame, det_interval, det_th)
                     if cur_frame >= max_frames:
+                        MPVariable.running.value = False
                         break
                     cur_frame += 1
                 viz_out_time = time.time()
@@ -133,24 +136,25 @@ def ssd_mobilenet_v1_without_split(cfg, category_index, graph):
     return
 
 def ssd_mobilenet_v1_with_split(cfg, category_index, graph, score, expand):
-    video_input         = cfg['video_input']
-    visualize           = cfg['visualize']
-    vis_text            = cfg['vis_text']
-    max_frames          = cfg['max_frames']
-    allow_memory_growth = cfg['allow_memory_growth']
-    width               = cfg['width']
-    height              = cfg['height']
-    det_interval        = cfg['det_interval']
-    det_th              = cfg['det_th']
-    num_classes         = cfg['num_classes']
-    log_device          = cfg['log_device']
-    fps_interval        = cfg['fps_interval']
-    debug_mode          = cfg['debug_mode']
+    video_input          = cfg['video_input']
+    visualize            = cfg['visualize']
+    vis_text             = cfg['vis_text']
+    max_frames           = cfg['max_frames']
+    allow_memory_growth  = cfg['allow_memory_growth']
+    width                = cfg['width']
+    height               = cfg['height']
+    det_interval         = cfg['det_interval']
+    det_th               = cfg['det_th']
+    num_classes          = cfg['num_classes']
+    log_device           = cfg['log_device']
+    fps_interval         = cfg['fps_interval']
+    debug_mode           = cfg['debug_mode']
+    force_gpu_compatible = cfg['force_gpu_compatible']
 
     # Session Config: allow seperate GPU/CPU adressing and limit memory allocation
     config = tf.ConfigProto(allow_soft_placement=True, log_device_placement=log_device)
     config.gpu_options.allow_growth = allow_memory_growth
-    #config.gpu_options.per_process_gpu_memory_fraction = 0.01 # 80MB memory is enough to run on TX2
+    config.gpu_options.force_gpu_compatible = force_gpu_compatible
 
     # Define Input and Ouput tensors
     image_tensor = graph.get_tensor_by_name('image_tensor:0')
@@ -262,6 +266,7 @@ def ssd_mobilenet_v1_with_split(cfg, category_index, graph, score, expand):
             else:
                 without_visualization(category_index, boxes, scores, classes, cur_frame, det_interval, det_th)
                 if cur_frame >= max_frames:
+                    MPVariable.running.value = False
                     break
                 cur_frame += 1
             viz_out_time = time.time()

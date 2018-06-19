@@ -21,6 +21,8 @@ pip install --upgrade pyyaml
 Also, OpenCV >= 3.1 and Tensorflow >= 1.4
 
 ## Updates:
+- Add force_gpu_compatible option. : speed up from 30.5 FPS to 34.5 FPS without vizualization on TX2
+
 - Multi-Processing version corresponds to python 3.6 and python 2.7.
 - Parallel run to complete JIT. : Improve startup time from 90sec to 78sec.
 - Add time details.             : To understand the processing time well.
