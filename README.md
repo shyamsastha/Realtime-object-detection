@@ -5,7 +5,6 @@ forked from GustavZ/realtime_object_detection: [https://github.com/GustavZ/realt
 
 ## Getting Started:
 - login Jetson TX2 `ssh -C -Y ubuntu@xxx.xxx.xxx.xxx`
-- install pip packages. `pip install futures`
 - edit `config.yml` for your environment. (Ex. video_input: 0 # for PC)
 - run `python run_ssd_mobilenet_v1.py` realtime object detection (Multi-Threading)
 - run `python run_mp_ssd_mobilenet_v1.py` realtime object detection (Multi-Processing)
@@ -18,10 +17,10 @@ forked from GustavZ/realtime_object_detection: [https://github.com/GustavZ/realt
 pip install --upgrade futures
 pip install --upgrade pyyaml
 ```
-Also, OpenCV >= 3.1 and Tensorflow >= 1.4
+Also, OpenCV >= 3.1 and Tensorflow >= 1.4 (1.6 is good)
 
 ## Updates:
-- Add force_gpu_compatible option. : speed up from 30.5 FPS to 34.5 FPS without vizualization on TX2
+- Add force_gpu_compatible option. : ssd_mobilenet_v1_coco 34.5 FPS without vizualization 1280x720 on TX2.
 
 - Multi-Processing version corresponds to python 3.6 and python 2.7.
 - Parallel run to complete JIT. : Improve startup time from 90sec to 78sec.
