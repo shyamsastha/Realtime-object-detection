@@ -21,7 +21,7 @@ forked from GustavZ/realtime_object_detection: [https://github.com/GustavZ/realt
 - Separate split and non-split code.     : Remove unused session from split code.
 - Remove Session from load frozen graph. : Reduction of memory usage.
 
-- Flexible sleep_interval.          : Maybe speed up on high spec PC.
+- Flexible sleep_interval.          : Maybe speed up on high performance PC.
 - FPS separate to multi-processing. : Speed up.
 - FPS streaming calculation.        : Flat fps.
 - FPS is average of fps_interval.   : Flat fps.
