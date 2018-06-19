@@ -13,6 +13,13 @@ forked from GustavZ/realtime_object_detection: [https://github.com/GustavZ/realt
 - Multi-Threading is better performance. Multi-Processing bottleneck is interprocess communication.
 <br />
 
+## Requirements:
+```
+pip install --upgrade futures
+pip install --upgrade pyyaml
+```
+Also, OpenCV >= 3.1 and Tensorflow >= 1.4
+
 ## Updates:
 - Multi-Processing version corresponds to python 3.6 and python 2.7.
 - Parallel run to complete JIT. : Improve startup time from 90sec to 78sec.
