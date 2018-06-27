@@ -12,6 +12,7 @@ class LoadFrozenGraph():
         return
 
     def load_graph(self):
+        print('Building Graph')
         if not self.cfg['split_model']:
             return self.load_frozen_graph_without_split()
         else:
@@ -85,7 +86,7 @@ class LoadFrozenGraph():
         """
         return
         """
-        return detection_graph, None, None
+        return detection_graph
 
     def load_frozen_graph_with_split(self):
         """
@@ -180,4 +181,4 @@ class LoadFrozenGraph():
         """
         return    
         """
-        return tf.get_default_graph(), score, expand
+        return tf.get_default_graph()

@@ -7,9 +7,8 @@ forked from GustavZ/realtime_object_detection: [https://github.com/GustavZ/realt
 - login Jetson TX2 `ssh -C -Y ubuntu@xxx.xxx.xxx.xxx`
 - edit `config.yml` for your environment. (Ex. video_input: 0 # for PC)
 - run `python run_ssd_mobilenet_v1.py` realtime object detection (Multi-Threading)
-- run `python run_mp_ssd_mobilenet_v1.py` realtime object detection (Multi-Processing)
 - wait few minuts.
-- Multi-Threading is better performance. Multi-Processing bottleneck is interprocess communication.
+- Multi-Threading is better performance than Multi-Processing. Multi-Processing bottleneck is interprocess communication.
 <br />
 
 ## Requirements:
@@ -20,10 +19,12 @@ pip install --upgrade pyyaml
 Also, OpenCV >= 3.1 and Tensorflow >= 1.4 (1.6 is good)
 
 ## Updates:
+- Drop unused files.
+
 - Add force_gpu_compatible option. : ssd_mobilenet_v1_coco 34.5 FPS without vizualization 1280x720 on TX2.
 
 - Multi-Processing version corresponds to python 3.6 and python 2.7.
-- Parallel run to complete JIT. : Improve startup time from 90sec to 78sec.
+- Launch speed up.              : Improve startup time from 90sec to 78sec.
 - Add time details.             : To understand the processing time well.
 
 - Separate split and non-split code.     : Remove unused session from split code.
@@ -56,7 +57,6 @@ Also, OpenCV >= 3.1 and Tensorflow >= 1.4 (1.6 is good)
   * JetPack 3.2
     * Python 3.6
     * OpenCV 3.4.1/Tensorflow 1.6.0
-
 <br />
 
 ## NVPMODEL
@@ -85,7 +85,7 @@ Show current mode
 sudo nvpmodel -q --verbose
 ```
 
-## Current max Performance on `ssd_mobilenet` (with visualization 160x120):
+## Current max Performance on `ssd_mobilenet_v1` (with visualization 160x120):
 | FPS | Multi | Mode | CPU | Watt | Ampere | Volt-Ampere | Model | classes |
 |:--|:--|:--|:--|:--|:--|:--|:--|:--|
 | 40 | Multi-Threading | Max-N | 27-55% | 15.6W | 0.27A | 27.8VA | roadsign_frozen_inference_graph_v1_2nd_4k.pb | 4 |

@@ -19,8 +19,6 @@ det_th: 0.5                 # detection threshold for det_intervall
 split_model: True           # Splits Model into a GPU and CPU session (currently only works for ssd_mobilenets)
 log_device: False           # Logs GPU / CPU device placement
 allow_memory_growth: True   # limits memory allocation to the actual needs
-image_path: 'test_images'   # used for image_detection.pyq
-convert_rgb: True           # Converts BGR to RGB color (idk how it ever worked without this)
 ssd_shape: 300              # used for the split model algorithm
                             # currently only supports ssd networks trained on 300x300 and 600x600 input
 debug_mode: False           # Show FPS spike value
@@ -30,7 +28,7 @@ model_name: 'ssd_mobilenet_v1_coco'
 
 # mscoco
 #model_path: 'models/ssd_mobilenet_v11_coco/frozen_inference_graph.pb'
-#label_path: 'object_detection/data/mscoco_label_map.pbtxt'
+#label_path: 'models/ssd_mobilenet_v11_coco/mscoco_label_map.pbtxt'
 #num_classes: 90
 
 # own data
