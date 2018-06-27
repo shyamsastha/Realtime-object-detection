@@ -19,7 +19,7 @@ import logging
 
 import tensorflow as tf
 from google.protobuf import text_format
-from object_detection.protos import string_int_label_map_pb2
+from tf_utils.protos import string_int_label_map_pb2
 
 
 def _validate_label_map(label_map):
@@ -53,6 +53,18 @@ def create_category_index(categories):
   for cat in categories:
     category_index[cat['id']] = cat
   return category_index
+
+
+def get_max_label_map_index(label_map):
+  """Get maximum index in label map.
+
+  Args:
+    label_map: a StringIntLabelMapProto
+
+  Returns:
+    an integer
+  """
+  return max([item.id for item in label_map.item])
 
 
 def convert_label_map_to_categories(label_map,

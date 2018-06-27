@@ -9,17 +9,19 @@ import yaml
 import numpy as np
 
 from lib.mpfps import FPS
-from lib.detection import ssd_mobilenet_v1
+from lib.detection import SSDMobileNetV1
 
 """
 Execute ssd_mobilenet_v1.
 Repository:
 https://github.com/naisy/realtime_object_detection
 
-This code based on GustavZ's github.
+About repogitory: Forked from GustavZ's github.
 https://github.com/GustavZ/realtime_object_detection
 
 Updates:
+- Drop unused files.
+
 - Parallel run to complete JIT. : Improve startup time from 90sec to 78sec.
 - Add time details.             : To understand the processing time well.
 
@@ -96,9 +98,12 @@ def main():
         START DETECTION, FPS, FPS PRINT
         """
         fps = FPS(cfg)
-        t = fps.start()
-        ssd_mobilenet_v1(cfg)
-        t.join()
+        fps_counter_proc = fps.start_counter()
+        fps_console_proc = fps.start_console()
+        ssd = SSDMobileNetV1()
+        ssd.start(cfg)
+        fps_counter_proc.join()
+        fps_console_proc.join()
     except Exception as e:
         import traceback
         traceback.print_exc()
