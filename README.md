@@ -99,6 +99,9 @@ TX1 Multi-Threading is 25-26 FPS.
 
 
 ## Youtube
+#### Robot Car and Realtime Object Detection
+[![TX2](https://img.youtube.com/vi/FoRKFw6xoAY/1.jpg)](https://www.youtube.com/watch?v=FoRKFw6xoAY)
+
 #### Object Detection vs Semantic Segmentation on TX2
 [![TX2](https://img.youtube.com/vi/p4EeF0LGcw8/1.jpg)](https://www.youtube.com/watch?v=p4EeF0LGcw8)
 #### Realtime Object Detection on TX2
