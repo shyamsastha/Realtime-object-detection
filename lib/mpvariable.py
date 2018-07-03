@@ -18,4 +18,4 @@ class MPVariable():
     lost_proc_time = multiprocessing.Value(ctypes.c_float,0.0)
     total_proc_time = multiprocessing.Value(ctypes.c_float,0.0)
     first_complete_time = multiprocessing.Value(ctypes.c_float,0.0)
-
+    sleep_interval = multiprocessing.Value(ctypes.c_float,0.005)

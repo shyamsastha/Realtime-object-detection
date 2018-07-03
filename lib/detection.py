@@ -128,12 +128,10 @@ class SSDMobileNetV1():
         WAIT UNTIL THE FIRST DUMMY IMAGE DONE
         """ """ """ """ """ """ """ """ """ """ """
         print('Loading...')
-        loss = 0
         sleep_interval = 0.1
         """
         PUT DUMMY DATA INTO GPU WORKER
         """
-        is_dummy_gpu = True
         gpu_feeds = {image_tensor:  [np.zeros((300, 300, 3))]}
         gpu_extras = {}
         gpu_worker.put_sess_queue(gpu_opts, gpu_feeds, gpu_extras)
@@ -141,7 +139,6 @@ class SSDMobileNetV1():
             """
             PUT DUMMY DATA INTO CPU WORKER
             """
-            is_dummy_cpu = True
             if SSD_SHAPE == 600:
                 shape = 7326
             else:
@@ -300,10 +297,8 @@ class SSDMobileNetV1():
                 CHANGE SLEEP INTERVAL
                 """
                 if MPVariable.frame_counter.value == 0 and MPVariable.fps.value > 0:
-                    sleep_interval = 1.0 / MPVariable.fps.value / 10.0
-                    gpu_worker.sleep_interval = sleep_interval
-                    if SPLIT_MODEL:
-                        cpu_worker.sleep_interval = sleep_interval
+                    sleep_interval = 0.05 / MPVariable.fps.value
+                    MPVariable.sleep_interval.value = sleep_interval
 
                 MPVariable.frame_counter.value += 1
             """

@@ -3,6 +3,7 @@
 import threading
 import time
 import tensorflow as tf
+from lib.mpvariable import MPVariable
 
 import sys
 PY2 = sys.version_info[0] == 2
@@ -48,7 +49,6 @@ class SessionWorker():
         self.sess_queue = Queue.Queue()
         self.result_queue = Queue.Queue()
         self.tag = tag
-        self.sleep_interval = 0.005
         t = threading.Thread(target=self.execution, args=(graph, config))
         t.setDaemon(True)
         t.start()
@@ -77,7 +77,8 @@ class SessionWorker():
                                 extras.update({self.tag+"_out_time":time.time()})
                             self.result_queue.put({"results":results, "extras":extras})
                             self.sess_queue.task_done()
-                        time.sleep(self.sleep_interval)
+                        else:
+                            time.sleep(MPVariable.sleep_interval.value)
         except:
             import traceback
             traceback.print_exc()
