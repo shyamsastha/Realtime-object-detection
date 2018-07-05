@@ -1,30 +1,15 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
-import threading
-import time
-import tensorflow as tf
-from lib.mpvariable import MPVariable
-
-import sys
-PY2 = sys.version_info[0] == 2
-PY3 = sys.version_info[0] == 3
-if PY2:
-    import Queue
-elif PY3:
-    import queue as Queue
-
-class SessionWorker():
 # TensorFlow Session Thread
 #
 # usage:
 # before:
-#     results = sess.run([opt1, opt2], feed_dict={input_x:x, input_y:y})
+#     results = sess.run([opt1,opt2],feed_dict={input_x:x,input_y:y})
 # after:
-#     opts = [opt1, opt2]
-#     feeds = {input_x:x, input_y:y}
-#     extras = {"image":image} # Optional. None or {} for empty.
-#     woker = SessionWorker("TAG", graph, config)
-#     worker.put_sess_queue(opts, feeds)
+#     opts = [opt1,opt2]
+#     feeds = {input_x:x,input_y:y}
+#     extras = {"image":image} # Optional. 
+#     woker = SessionWorker("TAG",graph,config)
+#     worker.put_sess_queue(opts,feeds)
 #     q = worker.get_result_queue()
 #     if q is None:
 #         continue
@@ -43,13 +28,29 @@ class SessionWorker():
 #  - add in_time and out_time for processing time check
 #  - change extras type to DICT.
 #
+# PROTOTYPE FUNCTION:
+# - add secondary queue in case the CPU slow down.
 #
+import threading
+import time
+import tensorflow as tf
+from lib.mpvariable import MPVariable
+
+import sys
+PY2 = sys.version_info[0] == 2
+PY3 = sys.version_info[0] == 3
+if PY2:
+    import Queue
+elif PY3:
+    import queue as Queue
+
+class SessionWorker():
     def __init__(self, tag, graph, config):
         self.lock = threading.Lock()
-        self.sess_queue = Queue.Queue()
-        self.result_queue = Queue.Queue()
+        self.sess_queue = Queue.Queue(maxsize=1)
+        self.result_queue = Queue.Queue(maxsize=1)
         self.tag = tag
-        t = threading.Thread(target=self.execution, args=(graph, config))
+        t = threading.Thread(target=self.execution, args=(graph, config,))
         t.setDaemon(True)
         t.start()
         return

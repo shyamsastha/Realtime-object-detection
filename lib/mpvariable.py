@@ -19,3 +19,20 @@ class MPVariable():
     total_proc_time = multiprocessing.Value(ctypes.c_float,0.0)
     first_complete_time = multiprocessing.Value(ctypes.c_float,0.0)
     sleep_interval = multiprocessing.Value(ctypes.c_float,0.005)
+    vis_frame_counter = multiprocessing.Value(ctypes.c_int,0)
+    vis_fps = multiprocessing.Value(ctypes.c_float,0.0)
+    vis_fps_frames = multiprocessing.Value(ctypes.c_int,0)
+    vis_fps_seconds = multiprocessing.Value(ctypes.c_float,0.0) # FPS ave in 5sec (fps_interval)
+    send_proc_time = multiprocessing.Value(ctypes.c_float,0.0)
+    vis_drop_frames = multiprocessing.Value(ctypes.c_int,0)
+    vis_skip_rate = multiprocessing.Value(ctypes.c_float,0.0)
+
+    """
+    MULTI-PROCESSING PIPE
+    """
+    vis_in_con, det_out_con = multiprocessing.Pipe(duplex=False)
+
+
+    def __del__(self):
+        det_out_con.close()
+        vis_in_con.close()

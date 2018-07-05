@@ -2,6 +2,7 @@
 
 ## About this repository
 forked from GustavZ/realtime_object_detection: [https://github.com/GustavZ/realtime_object_detection](https://github.com/GustavZ/realtime_object_detection)
+And focused on ssd_mobilenet_v1.
 
 ## Getting Started:
 - login Jetson TX2 `ssh -C -Y ubuntu@xxx.xxx.xxx.xxx`
@@ -13,12 +14,91 @@ forked from GustavZ/realtime_object_detection: [https://github.com/GustavZ/realt
 
 ## Requirements:
 ```
-pip install --upgrade futures
 pip install --upgrade pyyaml
 ```
 Also, OpenCV >= 3.1 and Tensorflow >= 1.4 (1.6 is good)
 
+## config.yml
+#### Camera
+This is OpenCV argument.
+* USB Webcam on PC
+```
+video_input: 0
+```
+* USB Webcam on TX2
+```
+video_input: 1
+```
+* Onboard camera on TX2
+```
+video_input: "nvcamerasrc ! video/x-raw(memory:NVMM), width=(int)1280, height=(int)720,format=(string)I420, framerate=(fraction)30/1 ! nvvidconv flip-method=0 ! video/x-raw, format=(string)BGRx ! videoconvert ! video/x-raw, format=(string)BGR ! appsink"
+```
+
+####  Without Visualization
+I do not know why, but in TX2 force_gpu_compatible: True it will be faster.
+* on TX2
+```
+force_gpu_compatible: True
+visualize: False
+```
+* on PC
+```
+force_gpu_compatible: False
+visualize: False
+```
+
+#### With Visualization
+Visualization is heavy. Visualization FPS possible to limit.<br>
+Display FPS: Detection FPS.<br>
+* default is with Single-Processing and show every frames.
+```
+visualize: True
+vis_worker: False
+max_vis_fps: 0
+vis_text: True
+```
+* Visualization FPS limit with Single-Processing
+```
+visualize: True
+vis_worker: False
+max_vis_fps: 30
+vis_text: True
+```
+* Visualization FPS limit with Multi-Processing
+```
+visualize: True
+vis_worker: True
+max_vis_fps: 30
+vis_text: True
+```
+
+## Console Log
+```
+FPS:25.8  Frames:130 Seconds: 5.04248   | 1FRAME total: 0.11910   cap: 0.00013   gpu: 0.03837   cpu: 0.02768   lost: 0.05293   send: 0.03834   | VFPS:25.4  VFrames:128 VDrops: 1 
+```
+FPS: detection fps. average fps of fps_interval (5sec). <br>
+Frames: detection frames in fps_interval. <br>
+Seconds: fps_interval running time. <br>
+
+<hr>
+
+1FRAME<br>
+total: 1 frame's processing time. 0.1 means delay and 10 fps if it is single-threading. In multi-threading, this value means delay. <br>
+cap: time of capture camera image and transform for model input. <br>
+gpu: sess.run() time of gpu part. <br>
+cpu: sess.run() time of cpu part. <br>
+lost: time of overhead, something sleep etc. <br>
+send: time of multi-processing queue, block and pipe time. <br>
+
+<hr>
+
+VFPS: visualization fps. <br>
+VFrames: visualization frames in fps_interval. <br>
+VDrops: When multi-processing visualization is bottleneck, drops. <br>
+
 ## Updates:
+- Add Multi-Processing visualization. : Detection and visualization are asynchronous.
+
 - Drop unused files.
 
 - Add force_gpu_compatible option. : ssd_mobilenet_v1_coco 34.5 FPS without vizualization 1280x720 on TX2.

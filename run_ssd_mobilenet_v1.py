@@ -20,6 +20,8 @@ About repogitory: Forked from GustavZ's github.
 https://github.com/GustavZ/realtime_object_detection
 
 Updates:
+- Add Multi-Processing visualization. : Detection and visualization are asynchronous.
+
 - Drop unused files.
 
 - Parallel run to complete JIT. : Improve startup time from 90sec to 78sec.
