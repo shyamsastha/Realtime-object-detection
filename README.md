@@ -19,37 +19,37 @@ pip install --upgrade pyyaml
 Also, OpenCV >= 3.1 and Tensorflow >= 1.4 (1.6 is good)
 
 ## config.yml
-* Camera
+##### Camera
 This is OpenCV argument.
-  * USB Webcam on PC
+* USB Webcam on PC
 ```
 video_input: 0
 ```
-  * USB Webcam on TX2
+* USB Webcam on TX2
 ```
 video_input: 1
 ```
-  * Onboard camera on TX2
+* Onboard camera on TX2
 ```
 video_input: "nvcamerasrc ! video/x-raw(memory:NVMM), width=(int)1280, height=(int)720,format=(string)I420, framerate=(fraction)30/1 ! nvvidconv flip-method=0 ! video/x-raw, format=(string)BGRx ! videoconvert ! video/x-raw, format=(string)BGR ! appsink"
 ```
 
-* Without Visualization
+#####  Without Visualization
 I do not know why, but in TX2 force_gpu_compatible: True it will be faster.
-  * on TX2
+* on TX2
 ```
 force_gpu_compatible: True
 visualize: False
 ```
-  * on PC
+* on PC
 ```
 force_gpu_compatible: False
 visualize: False
 ```
 
-* With Visualization
-Visualization is heavy. Visualization FPS possible to limit.
-Display FPS: Detection FPS.
+##### With Visualization
+Visualization is heavy. Visualization FPS possible to limit.<br>
+Display FPS: Detection FPS.<br>
 * default is with Single-Processing and show every frames.
 ```
 visualize: True
