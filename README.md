@@ -177,7 +177,7 @@ sudo nvpmodel -q --verbose
 
 ## Current Max Performance
 | FPS | Machine | Size | Multi | Visualize | Mode | CPU | Watt | Ampere | Volt-Ampere | Model | classes |
-|:--|:--|:--|:--|:--|:--|:--|:--|:--|:--|
+|:--|:--|:--|:--|:--|:--|:--|:--|:--|:--|:--|:--|
 | 205 | PC | 160x120 | Multi-Threading | False | - | 22-25% | 168W | 1.68A | 170VA | frozen_inference_graph.pb | 90 |
 | 201 | PC | 160x120 | Multi-Threading | Worker 30 FPS Limit | - | 22-26% | 170W | 1.68A | 172VA | frozen_inference_graph.pb | 90 |
 | 195 | PC | 160x120 | Multi-Threading | True | - | 22-27% | 172W | 1.69A | 173VA | frozen_inference_graph.pb | 90 |
