@@ -1,11 +1,11 @@
-# Tensorflow realtime_object_detection on Jetson TX2/TX1
+# Tensorflow realtime_object_detection on Jetson TX2/TX1/PC
 
 ## About this repository
-forked from GustavZ/realtime_object_detection: [https://github.com/GustavZ/realtime_object_detection](https://github.com/GustavZ/realtime_object_detection)
-And focused on ssd_mobilenet_v1.
+forked from GustavZ/realtime_object_detection: [https://github.com/GustavZ/realtime_object_detection](https://github.com/GustavZ/realtime_object_detection)  
+And focused on ssd_mobilenet_v1.  
 
 ## Getting Started:
-- login Jetson TX2 `ssh -C -Y ubuntu@xxx.xxx.xxx.xxx`
+- login Jetson TX2. Desktop login or ssh remote login. `ssh -C -Y ubuntu@xxx.xxx.xxx.xxx`
 - edit `config.yml` for your environment. (Ex. video_input: 0 # for PC)
 - run `python run_ssd_mobilenet_v1.py` realtime object detection (Multi-Threading)
 - wait few minuts.
@@ -119,6 +119,15 @@ VDrops: When multi-processing visualization is bottleneck, drops. <br>
 - solve: Multiple session cannot launch problem. tensorflow.python.framework.errors_impl.InternalError: Failed to create session.
 
 ## My Setup:
+* PC
+  * CPU: i7-8700 3.20GHz 6-core 12-threads
+  * GPU: NVIDIA GTX1060 6GB
+  * MEMORY: 32GB
+  * Ubuntu 16.04
+    * docker-ce
+    * nvidia-docker
+      * nvidia/cuda
+      * Pyton 3.6.5/OpenCV 3.4.1/Tensorflow 1.6.1
 * Jetson TX2
   * JetPack 3.2/3.2.1
     * Python 3.6
@@ -134,6 +143,7 @@ VDrops: When multi-processing visualization is bottleneck, drops. <br>
     * OpenCV 3.4.1/Tensorflow 1.6.0
     * OpenCV 3.4.1/Tensorflow 1.6.1 (Main)
 * Jetson TX1
+  * SSD Storage
   * JetPack 3.2
     * Python 3.6
     * OpenCV 3.4.1/Tensorflow 1.6.0
@@ -165,17 +175,43 @@ Show current mode
 sudo nvpmodel -q --verbose
 ```
 
-## Current max Performance on `ssd_mobilenet_v1` (with visualization 160x120):
-| FPS | Multi | Mode | CPU | Watt | Ampere | Volt-Ampere | Model | classes |
-|:--|:--|:--|:--|:--|:--|:--|:--|:--|
-| 40 | Multi-Threading | Max-N | 27-55% | 15.6W | 0.27A | 27.8VA | roadsign_frozen_inference_graph_v1_2nd_4k.pb | 4 |
-| 36 | Multi-Threading | Max-P ARM | 50-59% | 12.1W | 0.21A | 21.9VA | roadsign_frozen_inference_graph_v1_2nd_4k.pb | 4 |
-| 35 | Multi-Processing | Max-N | 0-64% | 14.7W | 0.25A | 25.4VA | roadsign_frozen_inference_graph_v1_2nd_4k.pb | 4 |
-| 33 | Multi-Processing | Max-P ARM | 49-55% | 11.6W | 0.20A | 20.1VA | roadsign_frozen_inference_graph_v1_2nd_4k.pb | 4 |
+## Current Max Performance
+| FPS | Machine | Size | Multi | Visualize | Mode | CPU | Watt | Ampere | Volt-Ampere | Model | classes |
+|:--|:--|:--|:--|:--|:--|:--|:--|:--|:--|:--|:--|
+| 205 | PC | 160x120 | Multi-Threading | False | - | 22-25% | 168W | 1.68A | 170VA | frozen_inference_graph.pb | 90 |
+| 201 | PC | 160x120 | Multi-Threading | Worker 30 FPS Limit | - | 22-26% | 170W | 1.68A | 172VA | frozen_inference_graph.pb | 90 |
+| 195 | PC | 160x120 | Multi-Threading | True | - | 22-27% | 172W | 1.69A | 173VA | frozen_inference_graph.pb | 90 |
+| 195 | PC | 544x288 | Multi-Threading | False | - | 37-42% | 178W | 1.75A | 179VA | frozen_inference_graph.pb | 90 |
+| 189 | PC | 544x288 | Multi-Threading | Worker 30 FPS Limit | - | 40-44% | 172W | 1.71A | 174VA | frozen_inference_graph.pb | 90 |
+| 175 | PC | 544x288 | Multi-Threading | True | - | 44-52% | 175W | 1.77A | 177VA | frozen_inference_graph.pb | 90 |
+| 159 | PC | 1280x720 | Multi-Threading | False | - | 37-42% | 168W | 1.65A | 169VA | frozen_inference_graph.pb | 90 |
+| 149 | PC | 1280x720 | Multi-Threading | Worker 30 FPS Limit | - | 43-52% | 168W | 1.65A | 170VA | frozen_inference_graph.pb | 90 |
+| 140 | PC | 1280x720 | Multi-Threading | Worker 60 FPS Limit | - | 43-51% | 166W | 1.64A | 168VA | frozen_inference_graph.pb | 90 |
+| 136 | PC | 1280x720 | Multi-Threading | Worker 67 FPS | - | 47-53% | 168W | 1.65A | 170VA | frozen_inference_graph.pb | 90 |
+| 79 | PC | 1280x720 | Multi-Threading | True | - | 22-33% | 143W | 1.41A | 144VA | frozen_inference_graph.pb | 90 |
+| 40 | TX2 | 160x120 | Multi-Threading | False | Max-N | 62-68% | 18.1W | 0.29A | 29.6VA | frozen_inference_graph.pb | 90 |
+| 37 | TX2 | 544x288 | Multi-Threading | False | Max-N | 59-73% | 18.1W | 0.29A | 29.4VA | frozen_inference_graph.pb | 90 |
+| 36 | TX2 | 160x120 | Multi-Threading | False | Max-P ARM | 78-83% | 14.4W | 0.23A | 23.5VA | frozen_inference_graph.pb | 90 |
+| 35 | TX2 | 1280x720 | Multi-Threading | False | Max-N | 48-70% | 17.5W | 0.29A | 29.0VA | frozen_inference_graph.pb | 90 |
+| 34 | TX2 | 160x120 | Multi-Threading | True | Max-P ARM | 70-73% | 14.1W | 0.23A | 23.1VA | frozen_inference_graph.pb | 90 |
+| 34 | TX2 | 160x120 | Multi-Threading | True | Max-N | 0-62% | 16.1W | 0.26A | 26.2VA | frozen_inference_graph.pb | 90 |
+| 34 | TX2 | 544x288 | Multi-Threading | False | Max-P ARM | 79-83% | 14.1W | 0.23A | 23.4VA | frozen_inference_graph.pb | 90 |
+| 32 | TX2 | 544x288 | Multi-Threading | True | Max-N | 13-72% | 16.7W | 0.27A | 27.1VA | frozen_inference_graph.pb | 90 |
+| 31 | TX2 | 1280x720 | Multi-Threading | False | Max-P ARM | 78-81% | 13.3W | 0.22A | 22.6VA | frozen_inference_graph.pb | 90 |
+| 30 | TX2 | 544x288 | Multi-Threading | True | Max-P ARM | 72-80% | 13.9W | 0.22A | 22.8VA | frozen_inference_graph.pb | 90 |
+| 29 | TX2 | 1280x720 | Multi-Threading | True | Max-N | 18-73% | 16.6W | 0.27A | 27.1VA | frozen_inference_graph.pb | 90 |
+| 24 | TX2 | 1280x720 | Multi-Threading | True | Max-P ARM | 75-80% | 12.7W | 0.21A | 21.7VA | frozen_inference_graph.pb | 90 |
+| 24 | TX1 | 160x120 | Multi-Threading | False | - | 62-72% | 17.0W | 0.28A | 29.4VA | frozen_inference_graph.pb | 90 |
+| 23 | TX1 | 160x120 | Multi-Threading | True | - | 62-73% | 16.9W | 0.27A | 28.1VA | frozen_inference_graph.pb | 90 |
+| 23 | TX1 | 544x288 | Multi-Threading | False | - | 64-72% | 16.9W | 0.28A | 29.7VA | frozen_inference_graph.pb | 90 |
+| 21 | TX1 | 1280x720 | Multi-Threading | False | - | 60-68% | 16.0W | 0.26A | 27.3VA | frozen_inference_graph.pb | 90 |
+| 20 | TX1 | 544x288 | Multi-Threading | True | - | 69-77% | 16.4W | 0.26A | 27.8VA | frozen_inference_graph.pb | 90 |
+| 18 | TX1 | 1280x720 | Multi-Threading | True | - | 70-83% | 15.7W | 0.26A | 26.6VA | frozen_inference_graph.pb | 90 |
 
-TX1 Multi-Threading is 25-26 FPS.
-
-![](./document/ssd_mobilenet_160x120.png)<br>
+on PC 544x288:<br>
+![](./document/on_pc_544x288.png)<br>
+on TX2 544x288:<br>
+![](./document/on_tx2_544x288.png)<br>
 
 
 ## Youtube
