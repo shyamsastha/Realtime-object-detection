@@ -127,6 +127,7 @@ VDrops: When multi-processing visualization is bottleneck, drops. <br>
     * docker-ce
     * nvidia-docker
       * nvidia/cuda
+      * Pyton 2.7.12/OpenCV 3.4.1/Tensorflow 1.6.1
       * Pyton 3.6.5/OpenCV 3.4.1/Tensorflow 1.6.1
 * Jetson TX2
   * JetPack 3.2/3.2.1
@@ -233,3 +234,6 @@ gst-launch-1.0 -v ximagesrc use-damage=0 ! nvvidconv ! 'video/x-raw(memory:NVMM)
 
 ## Training ssd_mobilenet with own data
 [https://github.com/naisy/train_ssd_mobilenet](https://github.com/naisy/train_ssd_mobilenet)
+
+## Multi-Threading for Realtime Object Detection
+[Multi-Threading for Realtime Object Detection](About_Multi-Threading.md)
