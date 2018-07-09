@@ -3,7 +3,6 @@
 ## The first split model was created by @wkelongws.
 He did nice work!<br>
 For realtime object detection, this is the most important part.<br>
-<br>
 [https://github.com/tensorflow/models/issues/3270](https://github.com/tensorflow/models/issues/3270)<br>
 Processing image:<br>
 ![](./document/ProcessingFlow-P1.png)<br>
