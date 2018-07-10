@@ -58,8 +58,6 @@ class LoadFrozenGraph():
             tensor_shape = op_tensor.get_shape().as_list()
             print("{:-^32}\n{}".format(" outputs["+str(i)+"] shape ", tensor_shape))
             i += 1
-        print("{:-^32}\n{}".format(" op.name ", op.name))
-        print("{:-^32}\n{}".format(" op.name ", op.name))
         return
 
     # helper function for split model
