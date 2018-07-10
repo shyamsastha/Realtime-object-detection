@@ -24,36 +24,40 @@ ssd_shape: 300              # used for the split model algorithm
                             # currently only supports ssd networks trained on 300x300 and 600x600 input
 debug_mode: False           # Show FPS spike value
 
-# model_type supports 'ssd_mobilenet_v1', 'ssd_mobilenet_v2'.
-# ssdlite_mobilenet_v2 specified as ssd_mobilenet_v2
-# ssd_inception_v2_coco specified as ssd_mobilenet_v2
+# model_type supports 'ssd_v1', 'ssd_v2'.
 
-# ssd_mobilenet_v1_coco
-model_type: 'ssd_mobilenet_v1'
-model_path: 'models/ssd_mobilenet_v11_coco/frozen_inference_graph.pb'
-label_path: 'models/ssd_mobilenet_v11_coco/mscoco_label_map.pbtxt'
-num_classes: 90
+# ssd_mobilenet_v1_coco_2017_11_17 4913 nodes
+#model_type: 'ssd_v1'
+#model_path: 'models/ssd_mobilenet_v11_coco/frozen_inference_graph.pb'
+#label_path: 'models/ssd_mobilenet_v11_coco/mscoco_label_map.pbtxt'
+#num_classes: 90
 
 # ssd_mobilenet_v1 own data
-#model_type: 'ssd_mobilenet_v1'
+#model_type: 'ssd_v1'
 #model_path: 'models/ssd_mobilenet/roadsign_frozen_inference_graph_v1_2nd_4k.pb'
 #label_path: 'models/ssd_mobilenet/roadsign_label_map.pbtxt'
 #num_classes: 4
 
+# ssd_mobilenet_v1_coco_2018_01_28 4104 nodes
+model_type: 'ssd_v2'
+model_path: 'models/ssd_mobilenet_v1_coco/frozen_inference_graph.pb'
+label_path: 'models/ssd_mobilenet_v1_coco/mscoco_label_map.pbtxt'
+num_classes: 90
+
 #ssd_mobilenet_v2_coco
-#model_type: 'ssd_mobilenet_v2'
+#model_type: 'ssd_v2'
 #model_path: 'models/ssd_mobilenet_v2_coco/frozen_inference_graph.pb'
 #label_path: 'models/ssd_mobilenet_v2_coco/mscoco_label_map.pbtxt'
 #num_classes: 90
 
 #ssdlite_mobilenet_v2_coco
-#model_type: 'ssd_mobilenet_v2'
+#model_type: 'ssd_v2'
 #model_path: 'models/ssdlite_mobilenet_v2_coco/frozen_inference_graph.pb'
 #label_path: 'models/ssdlite_mobilenet_v2_coco/mscoco_label_map.pbtxt'
 #num_classes: 90
 
 #ssd_inception_v2_coco
-#model_type: 'ssd_mobilenet_v2'
+#model_type: 'ssd_v2'
 #model_path: 'models/ssd_inception_v2_coco/frozen_inference_graph.pb'
 #label_path: 'models/ssd_inception_v2_coco/mscoco_label_map.pbtxt'
 #num_classes: 90

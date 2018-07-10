@@ -104,13 +104,13 @@ def main():
         fps = FPS(cfg)
         fps_counter_proc = fps.start_counter()
         fps_console_proc = fps.start_console()
-        if model_type == 'ssd_mobilenet_v1':
-            from lib.detection_ssd_mobilenet_v1 import SSDMobileNetV1
-            ssd = SSDMobileNetV1()
+        if model_type == 'ssd_v1':
+            from lib.detection_ssd_v1 import SSDV1
+            ssd = SSDV1()
             ssd.start(cfg)
-        elif model_type == 'ssd_mobilenet_v2':
-            from lib.detection_ssd_mobilenet_v2 import SSDMobileNetV2
-            ssd = SSDMobileNetV2()
+        elif model_type == 'ssd_v2':
+            from lib.detection_ssd_v2 import SSDV2
+            ssd = SSDV2()
             ssd.start(cfg)
         else:
             raise IOError(("Unknown model_type."))
