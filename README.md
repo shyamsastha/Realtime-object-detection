@@ -4,6 +4,12 @@
 forked from GustavZ/realtime_object_detection: [https://github.com/GustavZ/realtime_object_detection](https://github.com/GustavZ/realtime_object_detection)  
 And focused on model split technique of ssd_mobilenet_v1.  
 
+Support models:  
+* ssd_mobilenet_v1
+* ssd_mobilenet_v2
+* ssdlite_mobilenet_v2
+* ssd_inception_v2
+
 See also:[https://github.com/tensorflow/models/issues/3270](https://github.com/tensorflow/models/issues/3270)
 
 ## Getting Started:
@@ -99,7 +105,7 @@ VFrames: visualization frames in fps_interval. <br>
 VDrops: When multi-processing visualization is bottleneck, drops. <br>
 
 ## Updates:
-- Support ssd_mobilenet_v2 and ssdlite_mobilenet_v2. : Download model from here: [detection_model_zoo](https://github.com/tensorflow/models/blob/master/research/object_detection/g3doc/detection_model_zoo.md)
+- Support ssd_mobilenet_v2, ssdlite_mobilenet_v2 and ssd_inception_v2_coco. : Download model from here: [detection_model_zoo](https://github.com/tensorflow/models/blob/master/research/object_detection/g3doc/detection_model_zoo.md)
 
 - Add Multi-Processing visualization. : Detection and visualization are asynchronous.
 

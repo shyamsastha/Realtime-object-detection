@@ -11,7 +11,7 @@ import numpy as np
 from lib.mpfps import FPS
 
 """
-Execute ssd_mobilenet_v1, ssd_mobilenet_v2, ssdlite_mobilenet_v2
+Execute ssd_mobilenet_v1, ssd_mobilenet_v2, ssdlite_mobilenet_v2, ssd_inception_v2_coco
 Repository:
 https://github.com/naisy/realtime_object_detection
 
@@ -19,7 +19,7 @@ About repogitory: Forked from GustavZ's github.
 https://github.com/GustavZ/realtime_object_detection
 
 Updates:
-- Support ssd_mobilenet_v2, ssdlite_mobilenet_v2
+- Support ssd_mobilenet_v2, ssdlite_mobilenet_v2, ssd_inception_v2_coco
 
 - Add Multi-Processing visualization. : Detection and visualization are asynchronous.
 
