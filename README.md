@@ -81,7 +81,7 @@ max_vis_fps: 30
 vis_text: True
 ```
 
-* Model type
+* Model type  
 The ssd_mobilenet_v1_coco_2017_11_17 has 4913 nodes. I will call this version 'ssd_v1'.<br>
 The ssd_mobilenet_v1_coco_2018_01_28 has 4104 nodes. I will call this version 'ssd_v2'.<br>
 And ssd_mobilenet_v2_coco_2018_03_29, ssdlite_mobilenet_v2_coco_2018_05_09, ssd_inception_v2_coco_2018_01_28 also 'ssd_v2'.<br>
