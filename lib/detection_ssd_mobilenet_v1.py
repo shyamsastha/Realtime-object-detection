@@ -2,7 +2,7 @@ import numpy as np
 from tf_utils import visualization_utils_cv2 as vis_util
 from lib.webcam import WebcamVideoStream
 from lib.session_worker import SessionWorker
-from lib.load_graph import LoadFrozenGraph
+from lib.load_graph_ssd_mobilenet_v1 import LoadFrozenGraph
 from lib.load_label_map import LoadLabelMap
 from lib.mpvariable import MPVariable
 from lib.mpvisualizeworker import MPVisualizeWorker, visualization

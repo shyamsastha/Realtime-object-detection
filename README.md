@@ -7,7 +7,7 @@ And focused on ssd_mobilenet_v1.
 ## Getting Started:
 - login Jetson TX2. Desktop login or ssh remote login. `ssh -C -Y ubuntu@xxx.xxx.xxx.xxx`
 - edit `config.yml` for your environment. (Ex. video_input: 0 # for PC)
-- run `python run_ssd_mobilenet_v1.py` realtime object detection (Multi-Threading)
+- run `python run_object_detection.py` realtime object detection (Multi-Threading)
 - wait few minuts.
 - Multi-Threading is better performance than Multi-Processing. Multi-Processing bottleneck is interprocess communication.
 <br />
@@ -97,6 +97,8 @@ VFrames: visualization frames in fps_interval. <br>
 VDrops: When multi-processing visualization is bottleneck, drops. <br>
 
 ## Updates:
+- Support ssd_mobilenet_v2. : Download model from here: [detection_model_zoo](https://github.com/tensorflow/models/blob/master/research/object_detection/g3doc/detection_model_zoo.md)
+
 - Add Multi-Processing visualization. : Detection and visualization are asynchronous.
 
 - Drop unused files.
@@ -176,7 +178,7 @@ Show current mode
 sudo nvpmodel -q --verbose
 ```
 
-## Current Max Performance
+## Current Max Performance of ssd_mobilenet_v1
 | FPS | Machine | Size | Multi | Visualize | Mode | CPU | Watt | Ampere | Volt-Ampere | Model | classes |
 |:--|:--|:--|:--|:--|:--|:--|:--|:--|:--|:--|:--|
 | 205 | PC | 160x120 | Multi-Threading | False | - | 22-25% | 168W | 1.68A | 170VA | frozen_inference_graph.pb | 90 |
