@@ -2,7 +2,9 @@
 
 ## About this repository
 forked from GustavZ/realtime_object_detection: [https://github.com/GustavZ/realtime_object_detection](https://github.com/GustavZ/realtime_object_detection)  
-And focused on ssd_mobilenet_v1.  
+And focused on model split technique of ssd_mobilenet_v1.  
+
+See also:[https://github.com/tensorflow/models/issues/3270](https://github.com/tensorflow/models/issues/3270)
 
 ## Getting Started:
 - login Jetson TX2. Desktop login or ssh remote login. `ssh -C -Y ubuntu@xxx.xxx.xxx.xxx`
@@ -97,7 +99,7 @@ VFrames: visualization frames in fps_interval. <br>
 VDrops: When multi-processing visualization is bottleneck, drops. <br>
 
 ## Updates:
-- Support ssd_mobilenet_v2. : Download model from here: [detection_model_zoo](https://github.com/tensorflow/models/blob/master/research/object_detection/g3doc/detection_model_zoo.md)
+- Support ssd_mobilenet_v2 and ssdlite_mobilenet_v2. : Download model from here: [detection_model_zoo](https://github.com/tensorflow/models/blob/master/research/object_detection/g3doc/detection_model_zoo.md)
 
 - Add Multi-Processing visualization. : Detection and visualization are asynchronous.
 
