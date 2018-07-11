@@ -104,14 +104,14 @@ def main():
         fps = FPS(cfg)
         fps_counter_proc = fps.start_counter()
         fps_console_proc = fps.start_console()
-        if model_type == 'ssd_v1':
-            from lib.detection_ssd_v1 import SSDV1
-            ssd = SSDV1()
-            ssd.start(cfg)
-        elif model_type == 'ssd_v2':
-            from lib.detection_ssd_v2 import SSDV2
-            ssd = SSDV2()
-            ssd.start(cfg)
+        if model_type == 'nms_v1':
+            from lib.detection_nms_v1 import NMSV1
+            detection = NMSV1()
+            detection.start(cfg)
+        elif model_type == 'nms_v2':
+            from lib.detection_nms_v2 import NMSV2
+            detection = NMSV2()
+            detection.start(cfg)
         else:
             raise IOError(("Unknown model_type."))
         fps_counter_proc.join()
