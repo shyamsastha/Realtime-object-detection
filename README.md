@@ -82,7 +82,7 @@ vis_text: True
 ```
 
 * Model type  
-The ssd_mobilenet_v1_coco_2017_11_17 has 4913 nodes. I will call this version 'nms_v1'.<br>
+The ssd_mobilenet_v1_coco_2017_11_17 has 4112 nodes. I will call this version 'nms_v1'.<br>
 The ssd_mobilenet_v1_coco_2018_01_28 has 4104 nodes. I will call this version 'nms_v2'.<br>
 And ssd_mobilenet_v2_coco_2018_03_29, ssdlite_mobilenet_v2_coco_2018_05_09, ssd_inception_v2_coco_2018_01_28 also 'nms_v2'.<br>
 The difference between 'nms_v1' and 'nms_v2' is BatchMultiClassNonMaxSuppression inputs.<br>
@@ -262,3 +262,6 @@ gst-launch-1.0 -v ximagesrc use-damage=0 ! nvvidconv ! 'video/x-raw(memory:NVMM)
 
 ## Multi-Threading for Realtime Object Detection
 [Multi-Threading for Realtime Object Detection](About_Multi-Threading.md)
+
+## Learn Split Model
+[Learn Split Model](About_Split-Model.md)

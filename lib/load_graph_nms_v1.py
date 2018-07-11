@@ -72,7 +72,6 @@ class LoadFrozenGraph():
         Load frozen_graph.
         """
         model_path = self.cfg['model_path']
-        debug_mode = self.cfg['debug_mode']
 
         detection_graph = tf.Graph()
         with detection_graph.as_default():
@@ -91,8 +90,6 @@ class LoadFrozenGraph():
         Load frozen_graph and split it into half of GPU and CPU.
         """
         model_path = self.cfg['model_path']
-        allow_memory_growth = self.cfg['allow_memory_growth']
-        debug_mode = self.cfg['debug_mode']
         ssd_shape = self.cfg['ssd_shape']
         num_classes = self.cfg['num_classes']
 
@@ -105,8 +102,8 @@ class LoadFrozenGraph():
         else:
             shape = 1917
         """ ADD CPU INPUT """
-        score = tf.placeholder(tf.float32, shape=(None, shape, num_classes), name=SPLIT_TARGET_SCORE_NAME)
-        expand = tf.placeholder(tf.float32, shape=(None, shape, 1, 4), name=SPLIT_TARGET_EXPAND_NAME)
+        score_in = tf.placeholder(tf.float32, shape=(None, shape, num_classes), name=SPLIT_TARGET_SCORE_NAME)
+        expand_in = tf.placeholder(tf.float32, shape=(None, shape, 1, 4), name=SPLIT_TARGET_EXPAND_NAME)
 
         """
         Load placeholder's graph_def.
