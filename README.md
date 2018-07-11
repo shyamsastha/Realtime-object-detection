@@ -5,11 +5,11 @@ forked from GustavZ/realtime_object_detection: [https://github.com/GustavZ/realt
 And focused on model split technique of ssd_mobilenet_v1.  
 
 Support models:  
-* ssd_mobilenet_v1 (ver. 2017_11_17) -> `model_type: 'ssd_v1'`
-* ssd_mobilenet_v1 (ver. 2018_01_28) -> `model_type: 'ssd_v2'`
-* ssd_mobilenet_v2 (ver. 2018_03_29) -> `model_type: 'ssd_v2'`
-* ssdlite_mobilenet_v2 (ver. 2018_05_09) -> `model_type: 'ssd_v2'`
-* ssd_inception_v2 (ver. 2018_01_28) -> `model_type: 'ssd_v2'`
+* ssd_mobilenet_v1 (ver. 2017_11_17) -> `model_type: 'nms_v1'`
+* ssd_mobilenet_v1 (ver. 2018_01_28) -> `model_type: 'nms_v2'`
+* ssd_mobilenet_v2 (ver. 2018_03_29) -> `model_type: 'nms_v2'`
+* ssdlite_mobilenet_v2 (ver. 2018_05_09) -> `model_type: 'nms_v2'`
+* ssd_inception_v2 (ver. 2018_01_28) -> `model_type: 'nms_v2'`
 
 See also:[https://github.com/tensorflow/models/issues/3270](https://github.com/tensorflow/models/issues/3270)
 
@@ -82,13 +82,13 @@ vis_text: True
 ```
 
 * Model type  
-The ssd_mobilenet_v1_coco_2017_11_17 has 4913 nodes. I will call this version 'ssd_v1'.<br>
-The ssd_mobilenet_v1_coco_2018_01_28 has 4104 nodes. I will call this version 'ssd_v2'.<br>
-And ssd_mobilenet_v2_coco_2018_03_29, ssdlite_mobilenet_v2_coco_2018_05_09, ssd_inception_v2_coco_2018_01_28 also 'ssd_v2'.<br>
-The difference between 'ssd_v1' and 'ssd_v2' is BatchMultiClassNonMaxSuppression inputs.<br>
+The ssd_mobilenet_v1_coco_2017_11_17 has 4913 nodes. I will call this version 'nms_v1'.<br>
+The ssd_mobilenet_v1_coco_2018_01_28 has 4104 nodes. I will call this version 'nms_v2'.<br>
+And ssd_mobilenet_v2_coco_2018_03_29, ssdlite_mobilenet_v2_coco_2018_05_09, ssd_inception_v2_coco_2018_01_28 also 'nms_v2'.<br>
+The difference between 'nms_v1' and 'nms_v2' is BatchMultiClassNonMaxSuppression inputs.<br>
 ```
 # ssd_mobilenet_v1_coco_2018_01_28 4104 nodes
-model_type: 'ssd_v2'
+model_type: 'nms_v2'
 model_path: 'models/ssd_mobilenet_v1_coco/frozen_inference_graph.pb'
 label_path: 'models/ssd_mobilenet_v1_coco/mscoco_label_map.pbtxt'
 num_classes: 90

@@ -2,7 +2,7 @@ import numpy as np
 from tf_utils import visualization_utils_cv2 as vis_util
 from lib.webcam import WebcamVideoStream
 from lib.session_worker import SessionWorker
-from lib.load_graph_ssd_v1 import LoadFrozenGraph
+from lib.load_graph_nms_v2 import LoadFrozenGraph
 from lib.load_label_map import LoadLabelMap
 from lib.mpvariable import MPVariable
 from lib.mpvisualizeworker import MPVisualizeWorker, visualization
@@ -21,7 +21,7 @@ elif PY3:
     import queue as Queue
 
 
-class SSDV1():
+class NMSV2():
     def __init__(self):
         return
 
@@ -84,10 +84,12 @@ class SSDV1():
         num_detections = graph.get_tensor_by_name('num_detections:0')
 
         if SPLIT_MODEL:
-            score_out = graph.get_tensor_by_name('Postprocessor/convert_scores:0')
+            slice1_out = graph.get_tensor_by_name('Postprocessor/Slice:0')
             expand_out = graph.get_tensor_by_name('Postprocessor/ExpandDims_1:0')
-            score_in = graph.get_tensor_by_name('Postprocessor/convert_scores_1:0')
+            slice1_in = graph.get_tensor_by_name('Postprocessor/Slice_1:0')
             expand_in = graph.get_tensor_by_name('Postprocessor/ExpandDims_1_1:0')
+            tofloat_out = graph.get_tensor_by_name('Postprocessor/ToFloat:0')
+            tofloat_in = graph.get_tensor_by_name('Postprocessor/ToFloat_1:0')
         """ """
 
         """ """ """ """ """ """ """ """ """ """ """
@@ -98,7 +100,7 @@ class SSDV1():
         cpu_tag = 'CPU'
         gpu_worker = SessionWorker(gpu_tag, graph, config)
         if SPLIT_MODEL:
-            gpu_opts = [score_out, expand_out]
+            gpu_opts = [slice1_out, expand_out, tofloat_out]
             cpu_worker = SessionWorker(cpu_tag, graph, config)
             cpu_opts = [detection_boxes, detection_scores, detection_classes, num_detections]
         else:
@@ -146,9 +148,11 @@ class SSDV1():
             else:
                 shape = 1917
 
-            score = np.zeros((1, shape, NUM_CLASSES))
+            slice1 = np.zeros((1, shape, NUM_CLASSES))
             expand = np.zeros((1, shape, 1, 4))
-            cpu_feeds = {score_in: score, expand_in: expand}
+            tofloat = [[300., 300., 3.]]
+
+            cpu_feeds = {slice1_in: slice1, expand_in: expand, tofloat_in: tofloat}
             cpu_extras = {}
             cpu_worker.put_sess_queue(cpu_opts, cpu_feeds, cpu_extras)
         """
@@ -207,12 +211,11 @@ class SSDV1():
                     # if g is None: gpu thread has no output queue. ok skip, let's check cpu thread.
                     if g is not None:
                         # gpu thread has output queue.
-                        score, expand, extras = g['results'][0], g['results'][1], g['extras']
-
+                        slice1, expand, tofloat, extras = g['results'][0], g['results'][1], g['results'][2], g['extras']
                         if cpu_worker.is_sess_empty():
                             # When cpu thread has no next queue, put new queue.
                             # else, drop gpu queue.
-                            cpu_feeds = {score_in: score, expand_in: expand}
+                            cpu_feeds = {slice1_in: slice1, expand_in: expand, tofloat_in: tofloat}
                             cpu_extras = extras
                             cpu_worker.put_sess_queue(cpu_opts, cpu_feeds, cpu_extras)
                         # else: cpu thread is busy. don't put new queue. let's check cpu result queue.
