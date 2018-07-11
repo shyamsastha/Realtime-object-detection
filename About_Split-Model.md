@@ -32,7 +32,7 @@ This has two input nodes.<br>
 Shape of ExpandDims_1 is ?x1917x1x4. (see output shape)<br>
 "?" means that input array length is not fixed length.<br>
 
-This input array length using as mini batch size "24" at the training.<br>
+This input array length using as mini batch size "24" at the training time.<br>
 At the prediction time, input image uses with array as [[image]]. This means the input array length is "1".<br>
 (When the prediction time, you can predict multiple images at once.)<br>
 
@@ -73,11 +73,9 @@ Write new inputs in default graph with tf.placeholder. source code:[lib/load_gra
 ```
 The first, I reset the default graph. I wrote it to mean that the graph is empty at this time.<br>
 The shape is in the previous graph diagram.<br>
-Set the same name for name. The new input is "_1" appended to the name, so use it.<br>
+Set the same name for name. The new input name is appended "_1" to the name automatically, so use it.<br>
 
 ### Use split model.
-The input of the primary graph (gpu part) does not change and it uses image array. The output operation names are ExpandDims_1 and convert_scores.<br>
-
 The input of the primary graph (gpu part) does not change and it is image array. The output operation names are ExpandDims_1 and convert_scores.<br>
 
 The input of secondary graph (cpu part) becomes expand_in and score_in created with tf.placeholder. The output operation names are not change, these are detection_boxes, detection_scores, detection_classes and num_detections.<br>
