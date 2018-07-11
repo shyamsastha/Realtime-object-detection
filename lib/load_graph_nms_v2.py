@@ -107,9 +107,9 @@ class LoadFrozenGraph():
         else:
             shape = 1917
         """ ADD CPU INPUT """
-        slice1 = tf.placeholder(tf.float32, shape=(None, shape, num_classes), name=SPLIT_TARGET_SLICE1_NAME)
-        expand = tf.placeholder(tf.float32, shape=(None, shape, 1, 4), name=SPLIT_TARGET_EXPAND_NAME) # shape=output shape
-        tofloat = tf.placeholder(tf.float32, shape=(None), name=SPLIT_TARGET_TOFLOAT_NAME) # array of float
+        slice1_in = tf.placeholder(tf.float32, shape=(None, shape, num_classes), name=SPLIT_TARGET_SLICE1_NAME)
+        expand_in = tf.placeholder(tf.float32, shape=(None, shape, 1, 4), name=SPLIT_TARGET_EXPAND_NAME) # shape=output shape
+        tofloat_in = tf.placeholder(tf.float32, shape=(None), name=SPLIT_TARGET_TOFLOAT_NAME) # array of float
 
         """
         Load placeholder's graph_def.
