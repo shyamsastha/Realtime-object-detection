@@ -372,8 +372,8 @@ source code:[lib/detection_nms_v2.py](lib/detection_nms_v2.py)<br>
             expand_out = graph.get_tensor_by_name('Postprocessor/ExpandDims_1:0')
             slice1_in = graph.get_tensor_by_name('Postprocessor/Slice_1:0')
             expand_in = graph.get_tensor_by_name('Postprocessor/ExpandDims_1_1:0')
-            stack1_out = graph.get_tensor_by_name('Postprocessor/stack_1:0')
-            stack1_in = graph.get_tensor_by_name('Postprocessor/stack_1_1:0')
+            stack_out = graph.get_tensor_by_name('Postprocessor/stack_1:0')
+            stack_in = graph.get_tensor_by_name('Postprocessor/stack_1_1:0')
 ```
 Of course, arguments and returns of sess.run() use this.<br>
 
