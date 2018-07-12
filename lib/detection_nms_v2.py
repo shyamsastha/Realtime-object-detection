@@ -88,8 +88,8 @@ class NMSV2():
             expand_out = graph.get_tensor_by_name('Postprocessor/ExpandDims_1:0')
             slice1_in = graph.get_tensor_by_name('Postprocessor/Slice_1:0')
             expand_in = graph.get_tensor_by_name('Postprocessor/ExpandDims_1_1:0')
-            tofloat_out = graph.get_tensor_by_name('Postprocessor/ToFloat:0')
-            tofloat_in = graph.get_tensor_by_name('Postprocessor/ToFloat_1:0')
+            stack_out = graph.get_tensor_by_name('Postprocessor/stack_1:0')
+            stack_in = graph.get_tensor_by_name('Postprocessor/stack_1_1:0')
         """ """
 
         """ """ """ """ """ """ """ """ """ """ """
@@ -100,7 +100,7 @@ class NMSV2():
         cpu_tag = 'CPU'
         gpu_worker = SessionWorker(gpu_tag, graph, config)
         if SPLIT_MODEL:
-            gpu_opts = [slice1_out, expand_out, tofloat_out]
+            gpu_opts = [slice1_out, expand_out, stack_out]
             cpu_worker = SessionWorker(cpu_tag, graph, config)
             cpu_opts = [detection_boxes, detection_scores, detection_classes, num_detections]
         else:
@@ -150,9 +150,10 @@ class NMSV2():
 
             slice1 = np.zeros((1, shape, NUM_CLASSES))
             expand = np.zeros((1, shape, 1, 4))
-            tofloat = [[300., 300., 3.]]
+            stack = [[0., 0., 1., 1.]]
 
-            cpu_feeds = {slice1_in: slice1, expand_in: expand, tofloat_in: tofloat}
+
+            cpu_feeds = {slice1_in: slice1, expand_in: expand, stack_in: stack}
             cpu_extras = {}
             cpu_worker.put_sess_queue(cpu_opts, cpu_feeds, cpu_extras)
         """
@@ -211,11 +212,11 @@ class NMSV2():
                     # if g is None: gpu thread has no output queue. ok skip, let's check cpu thread.
                     if g is not None:
                         # gpu thread has output queue.
-                        slice1, expand, tofloat, extras = g['results'][0], g['results'][1], g['results'][2], g['extras']
+                        slice1, expand, stack, extras = g['results'][0], g['results'][1], g['results'][2], g['extras']
                         if cpu_worker.is_sess_empty():
                             # When cpu thread has no next queue, put new queue.
                             # else, drop gpu queue.
-                            cpu_feeds = {slice1_in: slice1, expand_in: expand, tofloat_in: tofloat}
+                            cpu_feeds = {slice1_in: slice1, expand_in: expand, stack_in: stack}
                             cpu_extras = extras
                             cpu_worker.put_sess_queue(cpu_opts, cpu_feeds, cpu_extras)
                         # else: cpu thread is busy. don't put new queue. let's check cpu result queue.
