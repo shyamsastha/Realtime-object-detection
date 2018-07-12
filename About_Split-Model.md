@@ -44,7 +44,7 @@ That "None" will appear as "?".<br>
 Divide here.<br>
 Write the definition of this division point in the source code:[lib/load_graph_nms_v1.py](lib/load_graph_nms_v1.py) as follows.<br>
 ```python
-        SPLIT_TARGET_EXPAND_NAME = "Postprocessor/ExpandDims_1"
+        SPLIT_TARGET_EXPAND_NAME = 'Postprocessor/ExpandDims_1'
 ```
 
 #### Postprocessor/convert_scores
@@ -54,11 +54,12 @@ Shape of convert_scores is ?x1917x90. (see output shape)<br>
 Divide here.<br>
 Write the definition of this division point in the source code:[lib/load_graph_nms_v1.py](lib/load_graph_nms_v1.py) as follows.<br>
 ```python
-        SPLIT_TARGET_SCORE_NAME = "Postprocessor/convert_scores"
+        SPLIT_TARGET_SCORE_NAME = 'Postprocessor/convert_scores'
 ```
 
 <hr>
 
+## Programming
 ### Add new inputs (score_in, expand_in) for secondary graph (cpu part).
 Write new inputs in default graph with tf.placeholder. source code:[lib/load_graph_nms_v1.py](lib/load_graph_nms_v1.py)<br>
 ```python
@@ -74,6 +75,198 @@ Write new inputs in default graph with tf.placeholder. source code:[lib/load_gra
 The first, I reset the default graph. I wrote it to mean that the graph is empty at this time.<br>
 The shape is in the previous graph diagram.<br>
 Set the same name for name. The new input name is appended "_1" to the name automatically, so use it.<br>
+
+### Get graph_def of new inputs.
+Now, new inputs exist in default graph, get graph def from there.<br>
+After get graph def of new inputs, reset default graph. New inputs tf.placeholder were created only for graph def.<br>
+```python
+        """
+        Load placeholder's graph_def.
+        """
+        for node in tf.get_default_graph().as_graph_def().node:
+            if node.name == SPLIT_TARGET_SCORE_NAME:
+                score_def = node
+            if node.name == SPLIT_TARGET_EXPAND_NAME:
+                expand_def = node
+
+        tf.reset_default_graph()
+```
+
+### Load Frozen Graph.
+Load frozen graph to graph_def variable.<br>
+```python
+        graph_def = tf.GraphDef()
+        with tf.gfile.GFile(model_path, 'rb') as fid:
+            serialized_graph = fid.read()
+            graph_def.ParseFromString(serialized_graph)
+```
+If non-split model, the loaded graph_def is imported into the default graph and return the default graph.<br>
+```python
+    def load_frozen_graph_without_split(self):
+        """
+        Load frozen_graph.
+        """
+        model_path = self.cfg['model_path']
+
+        tf.reset_default_graph()
+
+        graph_def = tf.GraphDef()
+        with tf.gfile.GFile(model_path, 'rb') as fid:
+            serialized_graph = fid.read()
+            graph_def.ParseFromString(serialized_graph)
+            tf.import_graph_def(graph_def, name='')
+        """
+        return
+        """
+        return tf.get_default_graph()
+```
+But in split model, processing continues.<br>
+
+<hr>
+
+Next is the most important code in model operation.<br>
+Load all inputs of all nodes and write inputs into edges[NODE_NAME].<br>
+```python
+            """
+            Check the connection of all nodes.
+            edges[] variable has input information for all nodes.
+            """
+            edges = {}
+            name_to_node_map = {}
+            node_seq = {}
+            seq = 0
+            for node in graph_def.node:
+                n = self.node_name(node.name)
+                if n == SPLIT_TARGET_EXPAND_NAME or  n == SPLIT_TARGET_SCORE_NAME:
+                    print(node)
+                name_to_node_map[n] = node
+                edges[n] = [self.node_name(x) for x in node.input]
+                if n == SPLIT_TARGET_EXPAND_NAME or  n == SPLIT_TARGET_SCORE_NAME:
+                    print(edges[n])
+                node_seq[n] = seq
+                seq += 1
+```
+The node 'Postprocessor/ExpandDims_1' has 2 inputs.<br>
+Node of Postprocessor/ExpandDims_1:<br>
+```
+name: "Postprocessor/ExpandDims_1"
+op: "ExpandDims"
+input: "Postprocessor/Reshape_2"
+input: "Postprocessor/ExpandDims_1/dim"
+attr {
+  key: "T"
+  value {
+    type: DT_FLOAT
+  }
+}
+attr {
+  key: "Tdim"
+  value {
+    type: DT_INT32
+  }
+}
+```
+Therefore, edges['Postprocessor/ExpandDims_1'] has 2 input node names.
+Edge of Postprocessor/ExpandDims_1:<br>
+```
+['Postprocessor/Reshape_2', 'Postprocessor/ExpandDims_1/dim']
+```
+The node 'Postprocessor/convert_scores' has 1 input.<br>
+Node of Postprocessor/convert_scores:<br>
+```
+name: "Postprocessor/convert_scores"
+op: "Sigmoid"
+input: "Postprocessor/scale_logits"
+attr {
+  key: "T"
+  value {
+    type: DT_FLOAT
+  }
+}
+```
+Therefore, edges['Postprocessor/convert_scores'] has 1 input node name.
+Edge of Postprocessor/convert_scores:<br>
+```
+['Postprocessor/scale_logits']
+```
+As you can see, the edges[] variable has input information for all nodes.<br>
+
+<hr>
+
+Alert if split target is not in the graph.<br>
+Raise ERROR is also good.<br>
+```python
+            """
+            Alert if split target is not in the graph.
+            """
+            dest_nodes = [SPLIT_TARGET_SCORE_NAME, SPLIT_TARGET_EXPAND_NAME]
+            for d in dest_nodes:
+                assert d in name_to_node_map, "%s is not in graph" % d
+```
+
+<hr>
+
+Follow all input nodes from the split point and add it into keep_list. This is GPU part.<br>
+```python
+            """
+            Making GPU part.
+            Follow all input nodes from the split point and add it into keep_list.
+            """
+            nodes_to_keep = set()
+            next_to_visit = dest_nodes
+
+            while next_to_visit:
+                n = next_to_visit[0]
+                del next_to_visit[0]
+                if n in nodes_to_keep:
+                    continue
+                nodes_to_keep.add(n)
+                next_to_visit += edges[n]
+
+            nodes_to_keep_list = sorted(list(nodes_to_keep), key=lambda n: node_seq[n])
+
+            keep = graph_pb2.GraphDef()
+            for n in nodes_to_keep_list:
+                keep.node.extend([copy.deepcopy(name_to_node_map[n])])
+```
+
+<hr>
+
+Making CPU part is simple. It removes GPU part from loaded graph and add new inputs.<br>
+```python
+            """
+            Making CPU part.
+            It removes GPU part from loaded graph and add new inputs.
+            """
+            nodes_to_remove = set()
+            for n in node_seq:
+                if n in nodes_to_keep_list: continue
+                nodes_to_remove.add(n)
+            nodes_to_remove_list = sorted(list(nodes_to_remove), key=lambda n: node_seq[n])
+
+            remove = graph_pb2.GraphDef()
+            remove.node.extend([score_def])
+            remove.node.extend([expand_def])
+            for n in nodes_to_remove_list:
+                remove.node.extend([copy.deepcopy(name_to_node_map[n])])
+```
+
+<hr>
+
+Finally, add device info and import into the default graph. And return the default graph.<br>
+```python
+            """
+            Import graph_def into default graph.
+            """
+            with tf.device('/gpu:0'):
+                tf.import_graph_def(keep, name='')
+            with tf.device('/cpu:0'):
+                tf.import_graph_def(remove, name='')
+
+        return tf.get_default_graph()
+```
+
+<hr>
 
 ### Use split model.
 The input of the primary graph (gpu part) does not change and it is image array. The output operation names are ExpandDims_1 and convert_scores.<br>
@@ -92,7 +285,7 @@ source code:[lib/detection_nms_v1.py](lib/detection_nms_v1.py)<br>
 
 <hr>
 
-### Diagram of split model.
+## Diagram of split model.
 New Output: ExpandDims_1 and convert_scores.<br>
 ![](./document/ssd_mobilenet_v1_nms_v1_split_new_output_ExpandDims_1.png)<br>
 ![](./document/ssd_mobilenet_v1_nms_v1_split_new_output_convert_scores.png)<br>

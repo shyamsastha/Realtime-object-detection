@@ -73,17 +73,17 @@ class LoadFrozenGraph():
         """
         model_path = self.cfg['model_path']
 
-        detection_graph = tf.Graph()
-        with detection_graph.as_default():
-            graph_def = tf.GraphDef()
-            with tf.gfile.GFile(model_path, 'rb') as fid:
-                serialized_graph = fid.read()
-                graph_def.ParseFromString(serialized_graph)
-                tf.import_graph_def(graph_def, name='')
+        tf.reset_default_graph()
+
+        graph_def = tf.GraphDef()
+        with tf.gfile.GFile(model_path, 'rb') as fid:
+            serialized_graph = fid.read()
+            graph_def.ParseFromString(serialized_graph)
+            tf.import_graph_def(graph_def, name='')
         """
         return
         """
-        return detection_graph
+        return tf.get_default_graph()
 
     def load_frozen_graph_with_split(self):
         """
@@ -93,8 +93,8 @@ class LoadFrozenGraph():
         ssd_shape = self.cfg['ssd_shape']
         num_classes = self.cfg['num_classes']
 
-        SPLIT_TARGET_SCORE_NAME = "Postprocessor/convert_scores"
-        SPLIT_TARGET_EXPAND_NAME = "Postprocessor/ExpandDims_1"
+        SPLIT_TARGET_SCORE_NAME = 'Postprocessor/convert_scores'
+        SPLIT_TARGET_EXPAND_NAME = 'Postprocessor/ExpandDims_1'
 
         tf.reset_default_graph()
         if ssd_shape == 600:
@@ -120,22 +120,37 @@ class LoadFrozenGraph():
         with tf.gfile.GFile(model_path, 'rb') as fid:
             serialized_graph = fid.read()
             graph_def.ParseFromString(serialized_graph)
-            dest_nodes = [SPLIT_TARGET_SCORE_NAME, SPLIT_TARGET_EXPAND_NAME]
 
+            """
+            Check the connection of all nodes.
+            edges[] variable has input information for all nodes.
+            """
             edges = {}
             name_to_node_map = {}
             node_seq = {}
             seq = 0
             for node in graph_def.node:
                 n = self.node_name(node.name)
+                if n == SPLIT_TARGET_EXPAND_NAME or  n == SPLIT_TARGET_SCORE_NAME:
+                    print(node)
                 name_to_node_map[n] = node
                 edges[n] = [self.node_name(x) for x in node.input]
+                if n == SPLIT_TARGET_EXPAND_NAME or  n == SPLIT_TARGET_SCORE_NAME:
+                    print(edges[n])
                 node_seq[n] = seq
                 seq += 1
 
+            """
+            Alert if split target is not in the graph.
+            """
+            dest_nodes = [SPLIT_TARGET_SCORE_NAME, SPLIT_TARGET_EXPAND_NAME]
             for d in dest_nodes:
                 assert d in name_to_node_map, "%s is not in graph" % d
 
+            """
+            Making GPU part.
+            Follow all input nodes from the split point and add it into keep_list.
+            """
             nodes_to_keep = set()
             next_to_visit = dest_nodes
 
@@ -149,15 +164,19 @@ class LoadFrozenGraph():
 
             nodes_to_keep_list = sorted(list(nodes_to_keep), key=lambda n: node_seq[n])
 
+            keep = graph_pb2.GraphDef()
+            for n in nodes_to_keep_list:
+                keep.node.extend([copy.deepcopy(name_to_node_map[n])])
+
+            """
+            Making CPU part.
+            It removes GPU part from loaded graph and add new inputs.
+            """
             nodes_to_remove = set()
             for n in node_seq:
                 if n in nodes_to_keep_list: continue
                 nodes_to_remove.add(n)
             nodes_to_remove_list = sorted(list(nodes_to_remove), key=lambda n: node_seq[n])
-
-            keep = graph_pb2.GraphDef()
-            for n in nodes_to_keep_list:
-                keep.node.extend([copy.deepcopy(name_to_node_map[n])])
 
             remove = graph_pb2.GraphDef()
             remove.node.extend([score_def])
@@ -165,6 +184,9 @@ class LoadFrozenGraph():
             for n in nodes_to_remove_list:
                 remove.node.extend([copy.deepcopy(name_to_node_map[n])])
 
+            """
+            Import graph_def into default graph.
+            """
             with tf.device('/gpu:0'):
                 tf.import_graph_def(keep, name='')
             with tf.device('/cpu:0'):
