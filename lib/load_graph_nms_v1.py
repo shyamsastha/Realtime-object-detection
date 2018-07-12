@@ -131,12 +131,12 @@ class LoadFrozenGraph():
             seq = 0
             for node in graph_def.node:
                 n = self.node_name(node.name)
-                if n == SPLIT_TARGET_EXPAND_NAME or  n == SPLIT_TARGET_SCORE_NAME:
-                    print(node)
+                #if n == SPLIT_TARGET_EXPAND_NAME or  n == SPLIT_TARGET_SCORE_NAME:
+                #    print(node)
                 name_to_node_map[n] = node
                 edges[n] = [self.node_name(x) for x in node.input]
-                if n == SPLIT_TARGET_EXPAND_NAME or  n == SPLIT_TARGET_SCORE_NAME:
-                    print(edges[n])
+                #if n == SPLIT_TARGET_EXPAND_NAME or  n == SPLIT_TARGET_SCORE_NAME:
+                #    print(edges[n])
                 node_seq[n] = seq
                 seq += 1
 
