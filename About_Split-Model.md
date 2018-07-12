@@ -78,7 +78,7 @@ Set the same name for name. The new input name is appended "_1" to the name auto
 
 ### Get graph_def of new inputs.
 Now, new inputs exist in default graph, get graph def from there.<br>
-After get graph def of new inputs, reset default graph. New inputs tf.placeholder were created only for graph def.<br>
+After get graph def of new inputs, reset default graph. New inputs tf.placeholder were created only for graph def. Don't need anymore.<br>
 ```python
         """
         Load placeholder's graph_def.
@@ -296,3 +296,97 @@ New Input: ExpandDims_1_1 and convert_scores_1.<br>
 
 <hr>
 
+## Split model for new Non-Maximum Suppression.
+In 2018, we know ssd_mobilenet_v1 was something changed.<br>
+And we also know ssd_mobilenet_v2 was uploaded.<br>
+Ok, let's check ssd_mobilenet_v2 first.<br>
+
+
+Looking at graph, I can see that there are three inputs.<br>
+Graph diagram of ssd_mobilenet_v2_2018_03_29:<br>
+![](./document/ssd_mobilenet_v2_nms_v2.png)<br>
+
+<hr>
+
+### Let's look at these input nodes.
+See type and output shape.<br>
+ExpandDims_1 is the same as previous one.<br>
+And, what is Slice? It seems convert_scores. Just renamed it.<br>
+And, what is stack_1? This is new face!<br>
+
+ExpandDims_1:<br>
+![](./document/ssd_mobilenet_v2_nms_v2_ExpandDims_1.png)<br>
+Slice:<br>
+![](./document/ssd_mobilenet_v2_nms_v2_Slice.png)<br>
+stack_1:<br>
+![](./document/ssd_mobilenet_v2_nms_v2_stack_1.png)<br>
+
+### Write code and build graph.
+stack_1 seems to be an array of Float. That is, tf.placeholder with shape is None.<br>
+source code:[lib/load_graph_nms_v2.py](lib/load_graph_nms_v1.py)<br>
+```python
+        """ ADD CPU INPUT """
+        slice1_in = tf.placeholder(tf.float32, shape=(None, shape, num_classes), name=SPLIT_TARGET_SLICE1_NAME)
+        expand_in = tf.placeholder(tf.float32, shape=(None, shape, 1, 4), name=SPLIT_TARGET_EXPAND_NAME) # shape=output shape
+        stack_in = tf.placeholder(tf.float32, shape=(None), name=SPLIT_TARGET_TOSTACK_NAME) # array of float
+```
+```python
+        """
+        Load placeholder's graph_def.
+        """
+        for node in tf.get_default_graph().as_graph_def().node:
+            if node.name == SPLIT_TARGET_SLICE1_NAME:
+                slice1_def = node
+            if node.name == SPLIT_TARGET_EXPAND_NAME:
+                expand_def = node
+            if node.name == SPLIT_TARGET_STACK_NAME:
+                stack_def = node
+
+        tf.reset_default_graph()
+```
+```python
+            """
+            Alert if split target is not in the graph.
+            """
+            dest_nodes = [SPLIT_TARGET_SLICE1_NAME, SPLIT_TARGET_EXPAND_NAME, SPLIT_TARGET_STACK_NAME]
+            for d in dest_nodes:
+                assert d in name_to_node_map, "%s is not in graph" % d
+```
+```python
+            remove = graph_pb2.GraphDef()
+            remove.node.extend([slice1_def])
+            remove.node.extend([expand_def])
+            remove.node.extend([stack_def])
+            for n in nodes_to_remove_list:
+                remove.node.extend([copy.deepcopy(name_to_node_map[n])])
+```
+Build split graph.<br>
+![](./document/ssd_mobilenet_v2_split.png)<br>
+
+### Write code and run.
+Operations.<br>
+source code:[lib/detection_nms_v2.py](lib/detection_nms_v2.py)<br>
+```python
+        if SPLIT_MODEL:
+            slice1_out = graph.get_tensor_by_name('Postprocessor/Slice:0')
+            expand_out = graph.get_tensor_by_name('Postprocessor/ExpandDims_1:0')
+            slice1_in = graph.get_tensor_by_name('Postprocessor/Slice_1:0')
+            expand_in = graph.get_tensor_by_name('Postprocessor/ExpandDims_1_1:0')
+            stack1_out = graph.get_tensor_by_name('Postprocessor/stack_1:0')
+            stack1_in = graph.get_tensor_by_name('Postprocessor/stack_1_1:0')
+```
+Of course, arguments and returns of sess.run() use this.<br>
+
+
+## Check Other Models.
+* ssdlite_mobilenet_v2_coco_2018_05_09
+* ssd_inception_v2_coco_2018_01_28
+* ssd_mobilenet_v1_coco_2018_01_28
+
+These are the same BatchMultiClassNonMaxSuppression inputs as ssd_mobilenet_v2_coco_2018_03_29.<br>
+ssdlite_mobilenet_v2_coco_2018_05_09:<br>
+![](./document/ssdlite_mobilenet_v2_nms_v2.png)<br>
+ssd_inception_v2_coco_2018_01_28:<br>
+![](./document/ssd_inception_v2_nms_v2.png)<br>
+ssd_mobilenet_v1_coco_2018_01_28:<br>
+![](./document/ssd_mobilenet_v1_nms_v2.png)<br>

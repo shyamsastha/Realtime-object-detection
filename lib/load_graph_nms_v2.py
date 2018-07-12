@@ -99,7 +99,7 @@ class LoadFrozenGraph():
 
         SPLIT_TARGET_SLICE1_NAME = 'Postprocessor/Slice' # Tensor
         SPLIT_TARGET_EXPAND_NAME = 'Postprocessor/ExpandDims_1' # Tensor
-        SPLIT_TARGET_TOFLOAT_NAME = 'Postprocessor/ToFloat' # Cast
+        SPLIT_TARGET_STACK_NAME = 'Postprocessor/stack_1' # Float array
 
         tf.reset_default_graph()
         if ssd_shape == 600:
@@ -109,7 +109,7 @@ class LoadFrozenGraph():
         """ ADD CPU INPUT """
         slice1_in = tf.placeholder(tf.float32, shape=(None, shape, num_classes), name=SPLIT_TARGET_SLICE1_NAME)
         expand_in = tf.placeholder(tf.float32, shape=(None, shape, 1, 4), name=SPLIT_TARGET_EXPAND_NAME) # shape=output shape
-        tofloat_in = tf.placeholder(tf.float32, shape=(None), name=SPLIT_TARGET_TOFLOAT_NAME) # array of float
+        stack_in = tf.placeholder(tf.float32, shape=(None), name=SPLIT_TARGET_STACK_NAME) # array of float
 
         """
         Load placeholder's graph_def.
@@ -119,8 +119,8 @@ class LoadFrozenGraph():
                 slice1_def = node
             if node.name == SPLIT_TARGET_EXPAND_NAME:
                 expand_def = node
-            if node.name == SPLIT_TARGET_TOFLOAT_NAME:
-                tofloat_def = node
+            if node.name == SPLIT_TARGET_STACK_NAME:
+                stack_def = node
 
         tf.reset_default_graph()
 
@@ -147,7 +147,7 @@ class LoadFrozenGraph():
             """
             Alert if split target is not in the graph.
             """
-            dest_nodes = [SPLIT_TARGET_SLICE1_NAME, SPLIT_TARGET_EXPAND_NAME, SPLIT_TARGET_TOFLOAT_NAME]
+            dest_nodes = [SPLIT_TARGET_SLICE1_NAME, SPLIT_TARGET_EXPAND_NAME, SPLIT_TARGET_STACK_NAME]
             for d in dest_nodes:
                 assert d in name_to_node_map, "%s is not in graph" % d
 
@@ -185,7 +185,7 @@ class LoadFrozenGraph():
             remove = graph_pb2.GraphDef()
             remove.node.extend([slice1_def])
             remove.node.extend([expand_def])
-            remove.node.extend([tofloat_def])
+            remove.node.extend([stack_def])
             for n in nodes_to_remove_list:
                 remove.node.extend([copy.deepcopy(name_to_node_map[n])])
 
