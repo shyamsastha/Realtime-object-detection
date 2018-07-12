@@ -328,7 +328,7 @@ source code:[lib/load_graph_nms_v2.py](lib/load_graph_nms_v1.py)<br>
         """ ADD CPU INPUT """
         slice1_in = tf.placeholder(tf.float32, shape=(None, shape, num_classes), name=SPLIT_TARGET_SLICE1_NAME)
         expand_in = tf.placeholder(tf.float32, shape=(None, shape, 1, 4), name=SPLIT_TARGET_EXPAND_NAME) # shape=output shape
-        stack_in = tf.placeholder(tf.float32, shape=(None), name=SPLIT_TARGET_TOSTACK_NAME) # array of float
+        stack_in = tf.placeholder(tf.float32, shape=(None), name=SPLIT_TARGET_STACK_NAME) # array of float
 ```
 ```python
         """
