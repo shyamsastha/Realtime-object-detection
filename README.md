@@ -12,7 +12,7 @@ Support models:
 * ssd_inception_v2 (ver. 2018_01_28) -> `model_type: 'nms_v2'`
 
 BETA model_type:
-* TensorRT -> `model_type: 'trt_v1'`
+* TensorRT -> `model_type: 'trt_v1'`<br>
 Requirements: [https://github.com/NVIDIA-Jetson/tf_trt_models](https://github.com/NVIDIA-Jetson/tf_trt_models)
 
 See also:[https://github.com/tensorflow/models/issues/3270](https://github.com/tensorflow/models/issues/3270)
