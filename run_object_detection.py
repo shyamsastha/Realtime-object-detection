@@ -92,7 +92,7 @@ def main():
         cfg = load_config()
         debug_mode = cfg['debug_mode']
         model_type = cfg['model_type']
-ssd_mobilenet_v1_coco_2018_01_28_trt_FP16.pb
+
         """
         LOG FORMAT MODE
         """
