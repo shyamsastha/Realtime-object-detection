@@ -92,7 +92,7 @@ def main():
         cfg = load_config()
         debug_mode = cfg['debug_mode']
         model_type = cfg['model_type']
-
+ssd_mobilenet_v1_coco_2018_01_28_trt_FP16.pb
         """
         LOG FORMAT MODE
         """
@@ -111,6 +111,10 @@ def main():
         elif model_type == 'nms_v2':
             from lib.detection_nms_v2 import NMSV2
             detection = NMSV2()
+            detection.start(cfg)
+        elif model_type == 'trt_v1':
+            from lib.detection_trt_v1 import TRTV1
+            detection = TRTV1()
             detection.start(cfg)
         else:
             raise IOError(("Unknown model_type."))

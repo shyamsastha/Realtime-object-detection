@@ -11,6 +11,10 @@ Support models:
 * ssdlite_mobilenet_v2 (ver. 2018_05_09) -> `model_type: 'nms_v2'`
 * ssd_inception_v2 (ver. 2018_01_28) -> `model_type: 'nms_v2'`
 
+BETA model_type:
+* TensorRT -> `model_type: 'trt_v1'`
+Requirements: [https://github.com/NVIDIA-Jetson/tf_trt_models](https://github.com/NVIDIA-Jetson/tf_trt_models)
+
 See also:[https://github.com/tensorflow/models/issues/3270](https://github.com/tensorflow/models/issues/3270)
 
 ## Getting Started:
@@ -91,6 +95,16 @@ The difference between 'nms_v1' and 'nms_v2' is BatchMultiClassNonMaxSuppression
 model_type: 'nms_v2'
 model_path: 'models/ssd_mobilenet_v1_coco/frozen_inference_graph.pb'
 label_path: 'models/ssd_mobilenet_v1_coco/mscoco_label_map.pbtxt'
+num_classes: 90
+```
+
+# TensorRT
+split/non-split both support. Need Tensorflow with TensorRT support. (r1.9 has bug. I use r1.8 for pc)
+```
+model_type: 'trt_v1'
+precision_model: 'FP32'     # 'FP32', 'FP16', 'INT8'
+model: 'ssd_inception_v2_coco_2018_01_28'
+label_path: 'models/trt_v1/mscoco_label_map.pbtxt'
 num_classes: 90
 ```
 

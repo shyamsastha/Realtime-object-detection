@@ -61,3 +61,29 @@ num_classes: 90
 #model_path: 'models/ssd_inception_v2_coco/frozen_inference_graph.pb'
 #label_path: 'models/ssd_inception_v2_coco/mscoco_label_map.pbtxt'
 #num_classes: 90
+
+
+#BETA FUNCTION - TRT
+# NEW DIR will be created.
+# ./data/ - download model. it has checkpoint.
+# ./logs/ - Graph diagram for tensorboard.
+# NEW FROZEN FILE will be created.
+# ./data/ssd_mobilenet_v1_coco_2017_11_17_trt_FP16.pb
+# MODEL DOWNLOAD
+# ssd_mobilenet_v1_coco_2017_11_17
+# ssd_inception_v2_coco_2017_11_17
+# ssd_mobilenet_v1_coco_2018_01_28
+# ssd_mobilenet_v2_coco_2018_03_29
+# ssdlite_mobilenet_v2_coco_2018_05_09
+# ssd_inception_v2_coco_2018_01_28
+# PRECISION MODEL
+# https://devtalk.nvidia.com/default/topic/1023708/gpu-accelerated-libraries/fp16-support-on-gtx-1060-and-1080/
+# FP16 is Tesla P100, Quadro GP100, and Jetson TX1/TX2.
+# INT8 is cc6.1 or cc7.0
+# FP32 for other devices.
+
+#model_type: 'trt_v1'
+#precision_model: 'FP32'     # 'FP32', 'FP16', 'INT8'
+#model: 'ssdlite_mobilenet_v2_coco_2018_05_09'
+#label_path: 'models/trt_v1/mscoco_label_map.pbtxt'
+#num_classes: 90
