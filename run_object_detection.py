@@ -112,6 +112,10 @@ def main():
             from lib.detection_nms_v2 import NMSV2
             detection = NMSV2()
             detection.start(cfg)
+        elif model_type == 'trt_v1':
+            from lib.detection_trt_v1 import TRTV1
+            detection = TRTV1()
+            detection.start(cfg)
         else:
             raise IOError(("Unknown model_type."))
         fps_counter_proc.join()
