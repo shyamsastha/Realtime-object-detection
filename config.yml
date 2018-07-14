@@ -26,44 +26,44 @@ debug_mode: False           # Show FPS spike value
 
 # model_type supports 'nms_v1', 'nms_v2'.
 
-# ssd_mobilenet_v1_coco_2017_11_17 4913 nodes
+# ssd_mobilenet_v1_coco_2017_11_17
 #model_type: 'nms_v1'
-#model_path: 'models/ssd_mobilenet_v11_coco/frozen_inference_graph.pb'
-#label_path: 'models/ssd_mobilenet_v11_coco/mscoco_label_map.pbtxt'
+#model_path: 'models/ssd_mobilenet_v1_coco_2017_11_17/frozen_inference_graph.pb'
+#label_path: 'models/labels/mscoco_label_map.pbtxt'
 #num_classes: 90
 
-# ssd_mobilenet_v1 own data
+# ssd_mobilenet_v1_2017_11_17 own data
 #model_type: 'nms_v1'
-#model_path: 'models/ssd_mobilenet/roadsign_frozen_inference_graph_v1_2nd_4k.pb'
-#label_path: 'models/ssd_mobilenet/roadsign_label_map.pbtxt'
+#model_path: 'models/ssd_mobilenet_v1_roadsign_2017_11_17/roadsign_frozen_inference_graph_v1_204k.pb'
+#label_path: 'models/ssd_mobilenet_v1_roadsign_2017_11_17/roadsign_label_map.pbtxt'
 #num_classes: 4
 
 # ssd_mobilenet_v1_coco_2018_01_28 4104 nodes
 model_type: 'nms_v2'
-model_path: 'models/ssd_mobilenet_v1_coco/frozen_inference_graph.pb'
-label_path: 'models/ssd_mobilenet_v1_coco/mscoco_label_map.pbtxt'
+model_path: 'models/ssd_mobilenet_v1_coco_2018_01_28/frozen_inference_graph.pb'
+label_path: 'models/labels/mscoco_label_map.pbtxt'
 num_classes: 90
 
-#ssd_mobilenet_v2_coco
+# ssd_mobilenet_v2_coco_2018_03_29
 #model_type: 'nms_v2'
-#model_path: 'models/ssd_mobilenet_v2_coco/frozen_inference_graph.pb'
-#label_path: 'models/ssd_mobilenet_v2_coco/mscoco_label_map.pbtxt'
+#model_path: 'models/ssd_mobilenet_v2_coco_2018_03_29/frozen_inference_graph.pb'
+#label_path: 'models/labels/mscoco_label_map.pbtxt'
 #num_classes: 90
 
-#ssdlite_mobilenet_v2_coco
+# ssdlite_mobilenet_v2_coco_2018_05_09
 #model_type: 'nms_v2'
-#model_path: 'models/ssdlite_mobilenet_v2_coco/frozen_inference_graph.pb'
-#label_path: 'models/ssdlite_mobilenet_v2_coco/mscoco_label_map.pbtxt'
+#model_path: 'models/ssdlite_mobilenet_v2_coco_2018_05_09/frozen_inference_graph.pb'
+#label_path: 'models/labels/mscoco_label_map.pbtxt'
 #num_classes: 90
 
-#ssd_inception_v2_coco
+# ssd_inception_v2_coco_2018_01_28
 #model_type: 'nms_v2'
-#model_path: 'models/ssd_inception_v2_coco/frozen_inference_graph.pb'
-#label_path: 'models/ssd_inception_v2_coco/mscoco_label_map.pbtxt'
+#model_path: 'models/ssd_inception_v2_coco_2018_01_28/frozen_inference_graph.pb'
+#label_path: 'models/labels/mscoco_label_map.pbtxt'
 #num_classes: 90
 
 
-#BETA FUNCTION - TRT
+# TensorRT
 # NEW DIR will be created.
 # ./data/ - download model. it has checkpoint.
 # ./logs/ - Graph diagram for tensorboard.
@@ -85,5 +85,5 @@ num_classes: 90
 #model_type: 'trt_v1'
 #precision_model: 'FP32'     # 'FP32', 'FP16', 'INT8'
 #model: 'ssdlite_mobilenet_v2_coco_2018_05_09'
-#label_path: 'models/trt_v1/mscoco_label_map.pbtxt'
+#label_path: 'models/labels/mscoco_label_map.pbtxt'
 #num_classes: 90
