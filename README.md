@@ -9,13 +9,15 @@ Support models:
 * ssd_mobilenet_v1 (ver. 2018_01_28) -> `model_type: 'nms_v2'`
 * ssd_mobilenet_v2 (ver. 2018_03_29) -> `model_type: 'nms_v2'`
 * ssdlite_mobilenet_v2 (ver. 2018_05_09) -> `model_type: 'nms_v2'`
-* ssd_inception_v2 (ver. 2018_01_28) -> `model_type: 'nms_v2'`
+* ssd_inception_v2 (ver. 2018_01_28) -> `model_type: 'nms_v2'`<br>
+Download model from here: [detection_model_zoo](https://github.com/tensorflow/models/blob/master/research/object_detection/g3doc/detection_model_zoo.md)
 
-BETA model_type:
 * TensorRT -> `model_type: 'trt_v1'`<br>
 Requirements: [https://github.com/NVIDIA-Jetson/tf_trt_models](https://github.com/NVIDIA-Jetson/tf_trt_models)
 
-See also:[https://github.com/tensorflow/models/issues/3270](https://github.com/tensorflow/models/issues/3270)
+See also:<br>
+* [https://github.com/tensorflow/models/issues/3270](https://github.com/tensorflow/models/issues/3270)
+* [https://devblogs.nvidia.com/tensorrt-integration-speeds-tensorflow-inference/](https://devblogs.nvidia.com/tensorrt-integration-speeds-tensorflow-inference/)
 
 ## Getting Started:
 - login Jetson TX2. Desktop login or ssh remote login. `ssh -C -Y ubuntu@xxx.xxx.xxx.xxx`
@@ -93,18 +95,18 @@ The difference between 'nms_v1' and 'nms_v2' is BatchMultiClassNonMaxSuppression
 ```
 # ssd_mobilenet_v1_coco_2018_01_28 4104 nodes
 model_type: 'nms_v2'
-model_path: 'models/ssd_mobilenet_v1_coco/frozen_inference_graph.pb'
-label_path: 'models/ssd_mobilenet_v1_coco/mscoco_label_map.pbtxt'
+model_path: 'models/ssd_mobilenet_v1_coco_2018_01_28/frozen_inference_graph.pb'
+label_path: 'models/labels/mscoco_label_map.pbtxt'
 num_classes: 90
 ```
 
-# TensorRT
+* TensorRT
 split/non-split both support. Need Tensorflow with TensorRT support. (r1.9 has bug. I use r1.8 for pc)
 ```
 model_type: 'trt_v1'
 precision_model: 'FP32'     # 'FP32', 'FP16', 'INT8'
 model: 'ssd_inception_v2_coco_2018_01_28'
-label_path: 'models/trt_v1/mscoco_label_map.pbtxt'
+label_path: 'models/labels/mscoco_label_map.pbtxt'
 num_classes: 90
 ```
 
@@ -134,6 +136,7 @@ VFrames: visualization frames in fps_interval. <br>
 VDrops: When multi-processing visualization is bottleneck, drops. <br>
 
 ## Updates:
+- Support TensorRT Optimization.
 - Support ssd_mobilenet_v2, ssdlite_mobilenet_v2 and ssd_inception_v2_coco. : Download model from here: [detection_model_zoo](https://github.com/tensorflow/models/blob/master/research/object_detection/g3doc/detection_model_zoo.md)
 
 - Add Multi-Processing visualization. : Detection and visualization are asynchronous.
