@@ -231,6 +231,7 @@ class TRTV1():
                     continue
 
                 boxes, scores, classes, extras = q['results'][0], q['results'][1], q['results'][2], q['extras']
+                classes = np.add(classes, 1) # trt_v1 label index start from 0.
                 det_out_time = time.time()
 
                 """
