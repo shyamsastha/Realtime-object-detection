@@ -64,13 +64,10 @@ Write the definition of this division point in the source code:[lib/load_graph_n
 Write new inputs in default graph with tf.placeholder. source code:[lib/load_graph_nms_v1.py](lib/load_graph_nms_v1.py)<br>
 ```python
         tf.reset_default_graph()
-        if ssd_shape == 600:
-            shape = 7326
-        else:
-            shape = 1917
+
         """ ADD CPU INPUT """
-        score_in = tf.placeholder(tf.float32, shape=(None, shape, num_classes), name=SPLIT_TARGET_SCORE_NAME)
-        expand_in = tf.placeholder(tf.float32, shape=(None, shape, 1, 4), name=SPLIT_TARGET_EXPAND_NAME)
+        score_in = tf.placeholder(tf.float32, shape=(None, split_shape, num_classes), name=SPLIT_TARGET_SCORE_NAME)
+        expand_in = tf.placeholder(tf.float32, shape=(None, split_shape, 1, 4), name=SPLIT_TARGET_EXPAND_NAME)
 ```
 The first, I reset the default graph. I wrote it to mean that the graph is empty at this time.<br>
 The shape is in the previous graph diagram.<br>
@@ -326,8 +323,8 @@ stack_1 seems to be an array of Float. That is, tf.placeholder with shape is Non
 source code:[lib/load_graph_nms_v2.py](lib/load_graph_nms_v1.py)<br>
 ```python
         """ ADD CPU INPUT """
-        slice1_in = tf.placeholder(tf.float32, shape=(None, shape, num_classes), name=SPLIT_TARGET_SLICE1_NAME)
-        expand_in = tf.placeholder(tf.float32, shape=(None, shape, 1, 4), name=SPLIT_TARGET_EXPAND_NAME) # shape=output shape
+        slice1_in = tf.placeholder(tf.float32, shape=(None, split_shape, num_classes), name=SPLIT_TARGET_SLICE1_NAME)
+        expand_in = tf.placeholder(tf.float32, shape=(None, split_shape, 1, 4), name=SPLIT_TARGET_EXPAND_NAME) # shape=output shape
         stack_in = tf.placeholder(tf.float32, shape=(None), name=SPLIT_TARGET_TOSTACK_NAME) # array of float
 ```
 ```python
