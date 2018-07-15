@@ -79,6 +79,12 @@ class LoadFrozenGraph():
         with tf.gfile.GFile(model_path, 'rb') as fid:
             serialized_graph = fid.read()
             graph_def.ParseFromString(serialized_graph)
+            # force CPU device placement for NMS ops
+            for node in graph_def.node:
+                if 'BatchMultiClassNonMaxSuppression' in node.name:
+                    node.device = '/device:CPU:0'
+                else:
+                    node.device = '/device:GPU:0'
             tf.import_graph_def(graph_def, name='')
 
         #self.print_graph_operation_by_name(detection_graph, "Postprocessor/Slice")

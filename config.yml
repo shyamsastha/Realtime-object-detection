@@ -17,11 +17,11 @@ height: 600                 # Camera height.
 fps_interval: 5             # FPS console out interval and FPS stream length.
 det_interval: 100           # intervall [frames] to print detections to console
 det_th: 0.5                 # detection threshold for det_intervall
-split_model: True           # Splits Model into a GPU and CPU session (currently only works for ssd_mobilenet_v1)
+split_model: True           # Splits Model into a GPU and CPU session
 log_device: False           # Logs GPU / CPU device placement
 allow_memory_growth: True   # limits memory allocation to the actual needs
 debug_mode: False           # Show FPS spike value
-label_path: 'models/labels/mscoco_label_map.pbtxt' # label of mscoco 90 classes
+label_path: 'models/labels/mscoco_label_map.pbtxt' # default: mscoco 90 classes
 split_shape: 1917           # 1917, 7326, 3000, 51150. ExpandDims_1's shape.
 num_classes: 90
 
@@ -65,14 +65,13 @@ num_classes: 90
 # ssd_mobilenet_v1_0.75_depth_quantized_300x300_coco14_sync_2018_07_03
 model_type: 'nms_v2'
 model_path: 'models/ssd_mobilenet_v1_coco_2018_01_28/frozen_inference_graph.pb'
-label_path: 'models/labels/mscoco_label_map.pbtxt'
-num_classes: 90
 
 
 ########################################
 # model_type: 'nms_v2'
 # split_shape: 51150
 ########################################
+# KNOWN MODELS
 # ssd_resnet50_v1_fpn_shared_box_predictor_640x640_coco14_sync_2018_07_03
 # ssd_mobilenet_v1_fpn_shared_box_predictor_640x640_coco14_sync_2018_07_03
 #model_type: 'nms_v2'
@@ -84,6 +83,7 @@ num_classes: 90
 # model_type: 'nms_v2'
 # split_shape: 3000
 ########################################
+# KNOWN MODELS
 # ssd_mobilenet_v1_ppn_shared_box_predictor_300x300_coco14_sync_2018_07_03
 #model_type: 'nms_v2'
 #model_path: 'models/ssd_mobilenet_v1_ppn_shared_box_predictor_300x300_coco14_sync_2018_07_03/frozen_inference_graph.pb'
@@ -116,4 +116,3 @@ num_classes: 90
 #model_type: 'trt_v1'
 #precision_model: 'FP32'     # 'FP32', 'FP16', 'INT8'
 #model: 'ssdlite_mobilenet_v2_coco_2018_05_09'
-#num_classes: 90

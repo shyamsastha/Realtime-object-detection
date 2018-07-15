@@ -23,6 +23,12 @@ class LoadFrozenGraph():
         print('Building Graph')
         trt_graph_def=self.build_trt_graph()
         if not self.cfg['split_model']:
+            # force CPU device placement for NMS ops
+            for node in trt_graph_def.node:
+                if 'BatchMultiClassNonMaxSuppression' in node.name:
+                    node.device = '/device:CPU:0'
+                else:
+                    node.device = '/device:GPU:0'
             return self.non_split_trt_graph(graph_def=trt_graph_def)
         else:
             return self.split_trt_graph(graph_def=trt_graph_def)
