@@ -5,11 +5,19 @@ forked from GustavZ/realtime_object_detection: [https://github.com/GustavZ/realt
 And focused on model split technique of ssd_mobilenet_v1.  
 
 Support models:  
-* ssd_mobilenet_v1 (ver. 2017_11_17) -> `model_type: 'nms_v1'`
-* ssd_mobilenet_v1 (ver. 2018_01_28) -> `model_type: 'nms_v2'`
-* ssd_mobilenet_v2 (ver. 2018_03_29) -> `model_type: 'nms_v2'`
-* ssdlite_mobilenet_v2 (ver. 2018_05_09) -> `model_type: 'nms_v2'`
-* ssd_inception_v2 (ver. 2018_01_28) -> `model_type: 'nms_v2'`<br>
+* ssd_mobilenet_v1_coco_2017_11_17 -> `model_type: 'nms_v1'`
+* ssd_inception_v2_coco_2017_11_17 -> `model_type: 'nms_v1'`
+* ssd_mobilenet_v1_coco_2018_01_28 -> `model_type: 'nms_v2'`
+* ssd_mobilenet_v2_coco_2018_03_29 -> `model_type: 'nms_v2'`
+* ssdlite_mobilenet_v2_coco_2018_05_09 -> `model_type: 'nms_v2'`
+* ssd_inception_v2_coco_2018_01_28 -> `model_type: 'nms_v2'`
+* ssd_mobilenet_v1_quantized_300x300_coco14_sync_2018_07_03 -> `model_type: 'nms_v2'`
+* ssd_mobilenet_v1_0.75_depth_300x300_coco14_sync_2018_07_03 -> `model_type: 'nms_v2'`
+* ssd_mobilenet_v1_0.75_depth_quantized_300x300_coco14_sync_2018_07_03 -> `model_type: 'nms_v2'`
+* ssd_resnet50_v1_fpn_shared_box_predictor_640x640_coco14_sync_2018_07_03 -> `model_type: 'nms_v2'` `split_shape: 51150`
+* ssd_mobilenet_v1_fpn_shared_box_predictor_640x640_coco14_sync_2018_07_03 -> `model_type: 'nms_v2'` `split_shape: 51150`
+* ssd_mobilenet_v1_ppn_shared_box_predictor_300x300_coco14_sync_2018_07_03 -> `model_type: 'nms_v2'` `split_shape: 3000`<br>
+
 Download model from here: [detection_model_zoo](https://github.com/tensorflow/models/blob/master/research/object_detection/g3doc/detection_model_zoo.md)
 
 * TensorRT -> `model_type: 'trt_v1'`<br>
@@ -136,7 +144,8 @@ VFrames: visualization frames in fps_interval. <br>
 VDrops: When multi-processing visualization is bottleneck, drops. <br>
 
 ## Updates:
-- Support TensorRT Optimization.
+- Support SSD 2018_07_03 models.
+- Support TensorRT Optimization. : Need TensorRT, Tensorflow with TensorRT.
 - Support ssd_mobilenet_v2, ssdlite_mobilenet_v2 and ssd_inception_v2_coco. : Download model from here: [detection_model_zoo](https://github.com/tensorflow/models/blob/master/research/object_detection/g3doc/detection_model_zoo.md)
 
 - Add Multi-Processing visualization. : Detection and visualization are asynchronous.

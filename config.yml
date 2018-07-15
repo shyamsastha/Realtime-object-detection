@@ -20,62 +20,93 @@ det_th: 0.5                 # detection threshold for det_intervall
 split_model: True           # Splits Model into a GPU and CPU session (currently only works for ssd_mobilenet_v1)
 log_device: False           # Logs GPU / CPU device placement
 allow_memory_growth: True   # limits memory allocation to the actual needs
-ssd_shape: 300              # used for the split model algorithm
-                            # currently only supports ssd networks trained on 300x300 and 600x600 input
 debug_mode: False           # Show FPS spike value
+label_path: 'models/labels/mscoco_label_map.pbtxt' # label of mscoco 90 classes
+split_shape: 1917           # 1917, 7326, 3000, 51150. ExpandDims_1's shape.
+num_classes: 90
 
-# model_type supports 'nms_v1', 'nms_v2'.
-
+# model_type supports 'nms_v1', 'nms_v2', 'trt_v1'.
+########################################
+# model_type: 'nms_v1'
+# split_shape: 1917
+# This is for 2017_11_17 models
+########################################
+# KNOWN MODELS
 # ssd_mobilenet_v1_coco_2017_11_17
+# ssd_inception_v2_coco_2017_11_17
 #model_type: 'nms_v1'
 #model_path: 'models/ssd_mobilenet_v1_coco_2017_11_17/frozen_inference_graph.pb'
-#label_path: 'models/labels/mscoco_label_map.pbtxt'
-#num_classes: 90
 
+
+########################################
+# model_type: 'nms_v1'
+# split_shape: 1917
+# This is for my own data
+########################################
 # ssd_mobilenet_v1_2017_11_17 own data
 #model_type: 'nms_v1'
 #model_path: 'models/ssd_mobilenet_v1_roadsign_2017_11_17/roadsign_frozen_inference_graph_v1_204k.pb'
 #label_path: 'models/ssd_mobilenet_v1_roadsign_2017_11_17/roadsign_label_map.pbtxt'
 #num_classes: 4
 
-# ssd_mobilenet_v1_coco_2018_01_28 4104 nodes
+
+########################################
+# model_type: 'nms_v2'
+# split_shape: 1917
+# This is for 2018_xx_xx models
+########################################
+# KNOWN MODELS
+# ssd_mobilenet_v1_coco_2018_01_28
+# ssd_mobilenet_v2_coco_2018_03_29
+# ssdlite_mobilenet_v2_coco_2018_05_09
+# ssd_inception_v2_coco_2018_01_28
+# ssd_mobilenet_v1_quantized_300x300_coco14_sync_2018_07_03
+# ssd_mobilenet_v1_0.75_depth_300x300_coco14_sync_2018_07_03
+# ssd_mobilenet_v1_0.75_depth_quantized_300x300_coco14_sync_2018_07_03
 model_type: 'nms_v2'
 model_path: 'models/ssd_mobilenet_v1_coco_2018_01_28/frozen_inference_graph.pb'
 label_path: 'models/labels/mscoco_label_map.pbtxt'
 num_classes: 90
 
-# ssd_mobilenet_v2_coco_2018_03_29
+
+########################################
+# model_type: 'nms_v2'
+# split_shape: 51150
+########################################
+# ssd_resnet50_v1_fpn_shared_box_predictor_640x640_coco14_sync_2018_07_03
+# ssd_mobilenet_v1_fpn_shared_box_predictor_640x640_coco14_sync_2018_07_03
 #model_type: 'nms_v2'
-#model_path: 'models/ssd_mobilenet_v2_coco_2018_03_29/frozen_inference_graph.pb'
-#label_path: 'models/labels/mscoco_label_map.pbtxt'
-#num_classes: 90
+#model_path: 'models/ssd_resnet50_v1_fpn_shared_box_predictor_640x640_coco14_syncc_2018_07_03/frozen_inference_graph.pb'
+#split_shape: 51150
 
-# ssdlite_mobilenet_v2_coco_2018_05_09
+
+########################################
+# model_type: 'nms_v2'
+# split_shape: 3000
+########################################
+# ssd_mobilenet_v1_ppn_shared_box_predictor_300x300_coco14_sync_2018_07_03
 #model_type: 'nms_v2'
-#model_path: 'models/ssdlite_mobilenet_v2_coco_2018_05_09/frozen_inference_graph.pb'
-#label_path: 'models/labels/mscoco_label_map.pbtxt'
-#num_classes: 90
-
-# ssd_inception_v2_coco_2018_01_28
-#model_type: 'nms_v2'
-#model_path: 'models/ssd_inception_v2_coco_2018_01_28/frozen_inference_graph.pb'
-#label_path: 'models/labels/mscoco_label_map.pbtxt'
-#num_classes: 90
+#model_path: 'models/ssd_mobilenet_v1_ppn_shared_box_predictor_300x300_coco14_sync_2018_07_03/frozen_inference_graph.pb'
+#split_shape: 3000
 
 
-# TensorRT
-# NEW DIR will be created.
-# ./data/ - download model. it has checkpoint.
-# ./logs/ - Graph diagram for tensorboard.
-# NEW FROZEN FILE will be created.
-# ./data/ssd_mobilenet_v1_coco_2017_11_17_trt_FP16.pb
-# MODEL DOWNLOAD
+########################################
+# model_type: 'trt_v1'
+# split_shape: 1917
+# This is for Tensorflow/TensorRT
+########################################
+# KNOWN MODELS
 # ssd_mobilenet_v1_coco_2017_11_17
 # ssd_inception_v2_coco_2017_11_17
 # ssd_mobilenet_v1_coco_2018_01_28
 # ssd_mobilenet_v2_coco_2018_03_29
 # ssdlite_mobilenet_v2_coco_2018_05_09
 # ssd_inception_v2_coco_2018_01_28
+# NEW DIR will be created.
+# ./data/ - download model. it has checkpoint.
+# ./logs/ - Graph diagram for tensorboard.
+# NEW FROZEN FILE will be created.
+# ./data/ssd_mobilenet_v1_coco_2017_11_17_trt_FP16.pb
 # PRECISION MODEL
 # https://devtalk.nvidia.com/default/topic/1023708/gpu-accelerated-libraries/fp16-support-on-gtx-1060-and-1080/
 # FP16 is Tesla P100, Quadro GP100, and Jetson TX1/TX2.
@@ -85,5 +116,4 @@ num_classes: 90
 #model_type: 'trt_v1'
 #precision_model: 'FP32'     # 'FP32', 'FP16', 'INT8'
 #model: 'ssdlite_mobilenet_v2_coco_2018_05_09'
-#label_path: 'models/labels/mscoco_label_map.pbtxt'
 #num_classes: 90

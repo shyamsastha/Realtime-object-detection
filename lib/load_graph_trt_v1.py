@@ -84,20 +84,17 @@ class LoadFrozenGraph():
         """
         Load frozen_graph and split it into half of GPU and CPU.
         """
-        ssd_shape = self.cfg['ssd_shape']
+        split_shape = self.cfg['split_shape']
         num_classes = self.cfg['num_classes']
 
         SPLIT_TARGET_SLICE1_NAME = 'Postprocessor/Slice' # Tensor
         SPLIT_TARGET_EXPAND_NAME = 'Postprocessor/ExpandDims_1' # Tensor
 
         tf.reset_default_graph()
-        if ssd_shape == 600:
-            shape = 7326
-        else:
-            shape = 1917
+
         """ ADD CPU INPUT """
-        slice1_in = tf.placeholder(tf.float32, shape=(None, shape, num_classes), name=SPLIT_TARGET_SLICE1_NAME)
-        expand_in = tf.placeholder(tf.float32, shape=(None, shape, 1, 4), name=SPLIT_TARGET_EXPAND_NAME) # shape=output shape
+        slice1_in = tf.placeholder(tf.float32, shape=(None, split_shape, num_classes), name=SPLIT_TARGET_SLICE1_NAME)
+        expand_in = tf.placeholder(tf.float32, shape=(None, split_shape, 1, 4), name=SPLIT_TARGET_EXPAND_NAME) # shape=output shape
 
         """
         Load placeholder's graph_def.

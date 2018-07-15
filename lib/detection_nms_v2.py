@@ -43,7 +43,7 @@ class NMSV2():
         SPLIT_MODEL          = cfg['split_model']
         LOG_DEVICE           = cfg['log_device']
         ALLOW_MEMORY_GROWTH  = cfg['allow_memory_growth']
-        SSD_SHAPE            = cfg['ssd_shape']
+        SPLIT_SHAPE          = cfg['split_shape']
         DEBUG_MODE           = cfg['debug_mode']
         LABEL_PATH           = cfg['label_path']
         NUM_CLASSES          = cfg['num_classes']
@@ -143,15 +143,9 @@ class NMSV2():
             """
             PUT DUMMY DATA INTO CPU WORKER
             """
-            if SSD_SHAPE == 600:
-                shape = 7326
-            else:
-                shape = 1917
-
-            slice1 = np.zeros((1, shape, NUM_CLASSES))
-            expand = np.zeros((1, shape, 1, 4))
+            slice1 = np.zeros((1, SPLIT_SHAPE, NUM_CLASSES))
+            expand = np.zeros((1, SPLIT_SHAPE, 1, 4))
             stack = [[0., 0., 1., 1.]]
-
 
             cpu_feeds = {slice1_in: slice1, expand_in: expand, stack_in: stack}
             cpu_extras = {}
