@@ -245,13 +245,13 @@ sudo nvpmodel -q --verbose
 | 40 | TX2 | 544x288 | Multi-Threading | False | Max-N | 60-77% | 18.0W | 0.28A | 29.8VA | frozen_inference_graph.pb | 90 |
 | 38 | TX2 | 1280x720 | Multi-Threading | False | Max-N | 62-75% | 17.7W | 0.27A | 29.2VA | frozen_inference_graph.pb | 90 |
 | 37 | TX2 | 160x120 | Multi-Threading | True | Max-N | 5-68% | 17.7W | 0.27A | 28.0VA | frozen_inference_graph.pb | 90 |
-| 35 | TX2 | 544x288 | Multi-Threading | True | Max-N | 20-71% | 17.0W | 0.27A | 27.7VA | frozen_inference_graph.pb | 90 |
-| 31 | TX2 | 1280x720 | Multi-Threading | True | Max-N | 46-75% | 16.9W | 0.26A | 28.1VA | frozen_inference_graph.pb | 90 |
 | 37 | TX2 | 160x120 | Multi-Threading | False | Max-P ARM | 80-86% | 13.8W | 0.22A | 23.0VA | frozen_inference_graph.pb | 90 |
 | 37 | TX2 | 160x120 | Multi-Threading | True | Max-P ARM | 77-80% | 14.0W | 0.22A | 23.1VA | frozen_inference_graph.pb | 90 |
+| 35 | TX2 | 544x288 | Multi-Threading | True | Max-N | 20-71% | 17.0W | 0.27A | 27.7VA | frozen_inference_graph.pb | 90 |
 | 35 | TX2 | 544x288 | Multi-Threading | False | Max-P ARM | 82-86% | 13.6W | 0.22A | 22.8VA | frozen_inference_graph.pb | 90 |
 | 34 | TX2 | 1280x720 | Multi-Threading | False | Max-P ARM | 82-87% | 13.6W | 0.21A | 22.2VA | frozen_inference_graph.pb | 90 |
 | 32 | TX2 | 544x288 | Multi-Threading | True | Max-P ARM | 79-85% | 13.4W | 0.21A | 22.3VA | frozen_inference_graph.pb | 90 |
+| 31 | TX2 | 1280x720 | Multi-Threading | True | Max-N | 46-75% | 16.9W | 0.26A | 28.1VA | frozen_inference_graph.pb | 90 |
 | 27 | TX1 | 160x120 | Multi-Threading | False | - | 71-80% | 17.3W | 0.27A | 28.2VA | frozen_inference_graph.pb | 90 |
 | 26 | TX2 | 1280x720 | Multi-Threading | True | Max-P ARM | 78-86% | 12.6W | 0.20A | 21.2VA | frozen_inference_graph.pb | 90 |
 | 26 | TX1 | 544x288 | Multi-Threading | False | - | 74-82% | 17.2W | 0.27A | 29.0VA | frozen_inference_graph.pb | 90 |
