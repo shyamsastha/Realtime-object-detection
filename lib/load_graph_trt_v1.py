@@ -25,7 +25,7 @@ class LoadFrozenGraph():
         if not self.cfg['split_model']:
             # force CPU device placement for NMS ops
             for node in trt_graph_def.node:
-                if 'BatchMultiClassNonMaxSuppression' in node.name:
+                if 'NonMaxSuppression' in node.name:
                     node.device = '/device:CPU:0'
                 else:
                     node.device = '/device:GPU:0'
