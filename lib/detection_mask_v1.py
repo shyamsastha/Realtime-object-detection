@@ -86,7 +86,15 @@ class MASKV1():
         num_detections = graph.get_tensor_by_name('num_detections:0')
         detection_masks = graph.get_tensor_by_name('detection_masks:0')
 
-        
+
+        """ """ """ """ """ """ """ """ """ """ """
+        START CAMERA
+        """ """ """ """ """ """ """ """ """ """ """
+        video_stream = WebcamVideoStream(VIDEO_INPUT, WIDTH, HEIGHT).start()
+        """ """
+        frame = video_stream.read()
+        rows, cols = frame.shape[:2]
+
         """ """ """ """ """ """ """ """ """ """ """
         PREAPRE GRAPH MASK OUTPUT
         """ """ """ """ """ """ """ """ """ """ """
@@ -98,7 +106,7 @@ class MASKV1():
         _detection_boxes = tf.slice(_detection_boxes, [0, 0], [_real_num_detection, -1])
         _detection_masks = tf.slice(_detection_masks, [0, 0, 0], [_real_num_detection, -1, -1])
         _detection_masks_reframed = utils_ops.reframe_box_masks_to_image_masks(
-            _detection_masks, _detection_boxes, 288, 544)
+            _detection_masks, _detection_boxes, rows, cols)
         _detection_masks_reframed = tf.cast(
             tf.greater(_detection_masks_reframed, 0.5), tf.uint8)
         # Follow the convention by adding back the batch dimension
@@ -199,12 +207,6 @@ class MASKV1():
         "" """
 
         """ """ """ """ """ """ """ """ """ """ """
-        START CAMERA
-        """ """ """ """ """ """ """ """ """ """ """
-        video_stream = WebcamVideoStream(VIDEO_INPUT, WIDTH, HEIGHT).start()
-        """ """
-
-        """ """ """ """ """ """ """ """ """ """ """
         DETECTION LOOP
         """ """ """ """ """ """ """ """ """ """ """
         print('Starting Detection')
@@ -278,7 +280,7 @@ class MASKV1():
                             vis_in_time = time.time()
                             image = extras['image']
                             """
-                            mask_image = np.zeros((288, 544), dtype=int)
+                            mask_image = np.zeros((rows, cols), dtype=int)
                             for object_mask in masks[0]:
                                 mask_image = np.add(mask_image, object_mask)
 

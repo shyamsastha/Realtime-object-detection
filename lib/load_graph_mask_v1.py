@@ -214,13 +214,6 @@ class LoadFrozenGraph():
             """
             with tf.device('/gpu:0'):
                 tf.import_graph_def(keep, name='')
-            #self.print_graph_def(keep)
-            self.print_graph_operation_by_name(tf.get_default_graph(),'BatchMultiClassNonMaxSuppression_1/map/strided_slice')
-            for node in remove.node:
-                if 'BatchMultiClassNonMaxSuppression_1/map/strided_slice' == node.name:
-                    print(node.op)
-                    node.op = 'StridedSlice'
-
             with tf.device('/cpu:0'):
                 tf.import_graph_def(remove, name='')
 

@@ -22,13 +22,12 @@ Support models:
 * TensorRT -> `model_type: 'trt_v1'`<br>
 Requirements: [https://github.com/NVIDIA-Jetson/tf_trt_models](https://github.com/NVIDIA-Jetson/tf_trt_models)<br>
 
-BETA:
+BETA: PC only
 * mask_rcnn_inception_resnet_v2_atrous_coco_2018_01_28 -> `model_type: 'mask_v1'`
 * mask_rcnn_inception_v2_coco_2018_01_28 -> `model_type: 'mask_v1'`
 * mask_rcnn_resnet101_atrous_coco_2018_01_28 -> `model_type: 'mask_v1'`
 * mask_rcnn_resnet50_atrous_coco_2018_01_28 -> `model_type: 'mask_v1'`<br>
 split_model can be True, but it's slow yet.<br>
-fixed display size.<br>
 
 See also:<br>
 * [https://github.com/tensorflow/models/issues/3270](https://github.com/tensorflow/models/issues/3270)
