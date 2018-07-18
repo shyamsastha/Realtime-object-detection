@@ -19,6 +19,7 @@ About repogitory: Forked from GustavZ's github.
 https://github.com/GustavZ/realtime_object_detection
 
 Updates:
+- Support MASK R-CNN
 - Support ssd_mobilenet_v2, ssdlite_mobilenet_v2, ssd_inception_v2_coco
 
 - Add Multi-Processing visualization. : Detection and visualization are asynchronous.
@@ -115,6 +116,10 @@ def main():
         elif model_type == 'trt_v1':
             from lib.detection_trt_v1 import TRTV1
             detection = TRTV1()
+            detection.start(cfg)
+        elif model_type == 'mask_v1':
+            from lib.detection_mask_v1 import MASKV1
+            detection = MASKV1()
             detection.start(cfg)
         else:
             raise IOError(("Unknown model_type."))

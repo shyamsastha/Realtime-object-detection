@@ -16,7 +16,7 @@ elif PY3:
     import queue as Queue
 
 
-def visualization(category_index, image, boxes, scores, classes, debug_mode, vis_text, fps_interval):
+def visualization(category_index, image, boxes, scores, classes, debug_mode, vis_text, fps_interval, masks=None):
     # Visualization of the results of a detection.
     vis_util.visualize_boxes_and_labels_on_image_array(
         image,
@@ -24,6 +24,7 @@ def visualization(category_index, image, boxes, scores, classes, debug_mode, vis
         np.squeeze(classes).astype(np.int32),
         np.squeeze(scores),
         category_index,
+        instance_masks=masks,
         use_normalized_coordinates=True,
         line_thickness=8)
     if vis_text:
@@ -61,7 +62,11 @@ class MPVisualizeWorker():
         FPS_INTERVAL         = cfg['fps_interval']
         SPLIT_MODEL          = cfg['split_model']
         DEBUG_MODE           = cfg['debug_mode']
+        MODEL_TYPE           = cfg['model_type']
         """ """
+        has_mask = False
+        if MODEL_TYPE == 'mask_v1':
+            has_mask = True
 
         """ """ """ """ """ """ """ """ """ """ """
         LOAD LABEL MAP
@@ -93,9 +98,13 @@ class MPVisualizeWorker():
                 #    continue
 
                 vis_in_time = time.time()
-                boxes, scores, classes, num, extras = q['results'][0], q['results'][1], q['results'][2], q['results'][3], q['extras']
                 image = extras['image']
-                image = visualization(category_index, image, boxes, scores, classes, DEBUG_MODE, VIS_TEXT, FPS_INTERVAL)
+                if not has_mask:
+                    boxes, scores, classes, num, extras = q['results'][0], q['results'][1], q['results'][2], q['results'][3], q['extras']
+                    image = visualization(category_index, image, boxes, scores, classes, DEBUG_MODE, VIS_TEXT, FPS_INTERVAL)
+                else:
+                    boxes, scores, classes, num, masks, extras = q['results'][0], q['results'][1], q['results'][2], q['results'][3], q['results'][4], q['extras']
+                    image = visualization(category_index, image, boxes, scores, classes, DEBUG_MODE, VIS_TEXT, FPS_INTERVAL, masks=masks)
                 """
                 SHOW
                 """

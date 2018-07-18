@@ -4,6 +4,8 @@
 forked from GustavZ/realtime_object_detection: [https://github.com/GustavZ/realtime_object_detection](https://github.com/GustavZ/realtime_object_detection)  
 And focused on model split technique of ssd_mobilenet_v1.  
 
+Download model from here: [detection_model_zoo](https://github.com/tensorflow/models/blob/master/research/object_detection/g3doc/detection_model_zoo.md)  
+
 Support models:  
 * ssd_mobilenet_v1_coco_2017_11_17 -> `model_type: 'nms_v1'`
 * ssd_inception_v2_coco_2017_11_17 -> `model_type: 'nms_v1'`
@@ -16,12 +18,17 @@ Support models:
 * ssd_mobilenet_v1_0.75_depth_quantized_300x300_coco14_sync_2018_07_03 -> `model_type: 'nms_v2'`
 * ssd_resnet50_v1_fpn_shared_box_predictor_640x640_coco14_sync_2018_07_03 -> `model_type: 'nms_v2'` `split_shape: 51150`
 * ssd_mobilenet_v1_fpn_shared_box_predictor_640x640_coco14_sync_2018_07_03 -> `model_type: 'nms_v2'` `split_shape: 51150`
-* ssd_mobilenet_v1_ppn_shared_box_predictor_300x300_coco14_sync_2018_07_03 -> `model_type: 'nms_v2'` `split_shape: 3000`<br>
-
-Download model from here: [detection_model_zoo](https://github.com/tensorflow/models/blob/master/research/object_detection/g3doc/detection_model_zoo.md)
-
+* ssd_mobilenet_v1_ppn_shared_box_predictor_300x300_coco14_sync_2018_07_03 -> `model_type: 'nms_v2'` `split_shape: 3000`
 * TensorRT -> `model_type: 'trt_v1'`<br>
-Requirements: [https://github.com/NVIDIA-Jetson/tf_trt_models](https://github.com/NVIDIA-Jetson/tf_trt_models)
+Requirements: [https://github.com/NVIDIA-Jetson/tf_trt_models](https://github.com/NVIDIA-Jetson/tf_trt_models)<br>
+
+BETA:
+* mask_rcnn_inception_resnet_v2_atrous_coco_2018_01_28 -> `model_type: 'mask_v1'`
+* mask_rcnn_inception_v2_coco_2018_01_28 -> `model_type: 'mask_v1'`
+* mask_rcnn_resnet101_atrous_coco_2018_01_28 -> `model_type: 'mask_v1'`
+* mask_rcnn_resnet50_atrous_coco_2018_01_28 -> `model_type: 'mask_v1'`<br>
+split_model can be True, but it's slow yet.<br>
+fixed display size.<br>
 
 See also:<br>
 * [https://github.com/tensorflow/models/issues/3270](https://github.com/tensorflow/models/issues/3270)
@@ -144,6 +151,9 @@ VFrames: visualization frames in fps_interval. <br>
 VDrops: When multi-processing visualization is bottleneck, drops. <br>
 
 ## Updates:
+- BETA: Support MASK R-CNN models.
+
+- Always split GPU/CPU device.
 - Support SSD 2018_07_03 models.
 - Support TensorRT Optimization. : Need TensorRT, Tensorflow with TensorRT.
 - Support ssd_mobilenet_v2, ssdlite_mobilenet_v2 and ssd_inception_v2_coco. : Download model from here: [detection_model_zoo](https://github.com/tensorflow/models/blob/master/research/object_detection/g3doc/detection_model_zoo.md)

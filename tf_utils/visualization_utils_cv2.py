@@ -22,179 +22,17 @@ The functions do not return a value, instead they modify the image itself.
 import collections
 import numpy as np
 import cv2
-
-
+from lib.color_map import STANDARD_COLORS, STANDARD_COLORS_ARRAY
 
 _TITLE_LEFT_MARGIN = 10
 _TITLE_TOP_MARGIN = 10
-STANDARD_COLORS_PIL = [
-    'AliceBlue', 'Chartreuse', 'Aqua', 'Aquamarine', 'Azure', 'Beige', 'Bisque',
-    'BlanchedAlmond', 'BlueViolet', 'BurlyWood', 'CadetBlue', 'AntiqueWhite',
-    'Chocolate', 'Coral', 'CornflowerBlue', 'Cornsilk', 'Crimson', 'Cyan',
-    'DarkCyan', 'DarkGoldenRod', 'DarkGrey', 'DarkKhaki', 'DarkOrange',
-    'DarkOrchid', 'DarkSalmon', 'DarkSeaGreen', 'DarkTurquoise', 'DarkViolet',
-    'DeepPink', 'DeepSkyBlue', 'DodgerBlue', 'FireBrick', 'FloralWhite',
-    'ForestGreen', 'Fuchsia', 'Gainsboro', 'GhostWhite', 'Gold', 'GoldenRod',
-    'Salmon', 'Tan', 'HoneyDew', 'HotPink', 'IndianRed', 'Ivory', 'Khaki',
-    'Lavender', 'LavenderBlush', 'LawnGreen', 'LemonChiffon', 'LightBlue',
-    'LightCoral', 'LightCyan', 'LightGoldenRodYellow', 'LightGray', 'LightGrey',
-    'LightGreen', 'LightPink', 'LightSalmon', 'LightSeaGreen', 'LightSkyBlue',
-    'LightSlateGray', 'LightSlateGrey', 'LightSteelBlue', 'LightYellow', 'Lime',
-    'LimeGreen', 'Linen', 'Magenta', 'MediumAquaMarine', 'MediumOrchid',
-    'MediumPurple', 'MediumSeaGreen', 'MediumSlateBlue', 'MediumSpringGreen',
-    'MediumTurquoise', 'MediumVioletRed', 'MintCream', 'MistyRose', 'Moccasin',
-    'NavajoWhite', 'OldLace', 'Olive', 'OliveDrab', 'Orange', 'OrangeRed',
-    'Orchid', 'PaleGoldenRod', 'PaleGreen', 'PaleTurquoise', 'PaleVioletRed',
-    'PapayaWhip', 'PeachPuff', 'Peru', 'Pink', 'Plum', 'PowderBlue', 'Purple',
-    'Red', 'RosyBrown', 'RoyalBlue', 'SaddleBrown', 'Green', 'SandyBrown',
-    'SeaGreen', 'SeaShell', 'Sienna', 'Silver', 'SkyBlue', 'SlateBlue',
-    'SlateGray', 'SlateGrey', 'Snow', 'SpringGreen', 'SteelBlue', 'GreenYellow',
-    'Teal', 'Thistle', 'Tomato', 'Turquoise', 'Violet', 'Wheat', 'White',
-    'WhiteSmoke', 'Yellow', 'YellowGreen'
-]
-
-''' PIL RGB colors to OpenCV BGR
-for color in STANDARD_COLORS:
-    rgb = ImageColor.getrgb(color)
-    bgr = (rgb[2],rgb[1],rgb[0])
-    print("  {}, # {}".format(bgr,color))
-'''
-STANDARD_COLORS = [
-  (255, 248, 240), # AliceBlue
-  (0, 255, 127), # Chartreuse
-  (255, 255, 0), # Aqua
-  (212, 255, 127), # Aquamarine
-  (255, 255, 240), # Azure
-  (220, 245, 245), # Beige
-  (196, 228, 255), # Bisque
-  (205, 235, 255), # BlanchedAlmond
-  (226, 43, 138), # BlueViolet
-  (135, 184, 222), # BurlyWood
-  (160, 158, 95), # CadetBlue
-  (215, 235, 250), # AntiqueWhite
-  (30, 105, 210), # Chocolate
-  (80, 127, 255), # Coral
-  (237, 149, 100), # CornflowerBlue
-  (220, 248, 255), # Cornsilk
-  (60, 20, 220), # Crimson
-  (255, 255, 0), # Cyan
-  (139, 139, 0), # DarkCyan
-  (11, 134, 184), # DarkGoldenRod
-  (169, 169, 169), # DarkGrey
-  (107, 183, 189), # DarkKhaki
-  (0, 140, 255), # DarkOrange
-  (204, 50, 153), # DarkOrchid
-  (122, 150, 233), # DarkSalmon
-  (143, 188, 143), # DarkSeaGreen
-  (209, 206, 0), # DarkTurquoise
-  (211, 0, 148), # DarkViolet
-  (147, 20, 255), # DeepPink
-  (255, 191, 0), # DeepSkyBlue
-  (255, 144, 30), # DodgerBlue
-  (34, 34, 178), # FireBrick
-  (240, 250, 255), # FloralWhite
-  (34, 139, 34), # ForestGreen
-  (255, 0, 255), # Fuchsia
-  (220, 220, 220), # Gainsboro
-  (255, 248, 248), # GhostWhite
-  (0, 215, 255), # Gold
-  (32, 165, 218), # GoldenRod
-  (114, 128, 250), # Salmon
-  (140, 180, 210), # Tan
-  (240, 255, 240), # HoneyDew
-  (180, 105, 255), # HotPink
-  (92, 92, 205), # IndianRed
-  (240, 255, 255), # Ivory
-  (140, 230, 240), # Khaki
-  (250, 230, 230), # Lavender
-  (245, 240, 255), # LavenderBlush
-  (0, 252, 124), # LawnGreen
-  (205, 250, 255), # LemonChiffon
-  (230, 216, 173), # LightBlue
-  (128, 128, 240), # LightCoral
-  (255, 255, 224), # LightCyan
-  (210, 250, 250), # LightGoldenRodYellow
-  (211, 211, 211), # LightGray
-  (211, 211, 211), # LightGrey
-  (144, 238, 144), # LightGreen
-  (193, 182, 255), # LightPink
-  (122, 160, 255), # LightSalmon
-  (170, 178, 32), # LightSeaGreen
-  (250, 206, 135), # LightSkyBlue
-  (153, 136, 119), # LightSlateGray
-  (153, 136, 119), # LightSlateGrey
-  (222, 196, 176), # LightSteelBlue
-  (224, 255, 255), # LightYellow
-  (0, 255, 0), # Lime
-  (50, 205, 50), # LimeGreen
-  (230, 240, 250), # Linen
-  (255, 0, 255), # Magenta
-  (170, 205, 102), # MediumAquaMarine
-  (211, 85, 186), # MediumOrchid
-  (219, 112, 147), # MediumPurple
-  (113, 179, 60), # MediumSeaGreen
-  (238, 104, 123), # MediumSlateBlue
-  (154, 250, 0), # MediumSpringGreen
-  (204, 209, 72), # MediumTurquoise
-  (133, 21, 199), # MediumVioletRed
-  (250, 255, 245), # MintCream
-  (225, 228, 255), # MistyRose
-  (181, 228, 255), # Moccasin
-  (173, 222, 255), # NavajoWhite
-  (230, 245, 253), # OldLace
-  (0, 128, 128), # Olive
-  (35, 142, 107), # OliveDrab
-  (0, 165, 255), # Orange
-  (0, 69, 255), # OrangeRed
-  (214, 112, 218), # Orchid
-  (170, 232, 238), # PaleGoldenRod
-  (152, 251, 152), # PaleGreen
-  (238, 238, 175), # PaleTurquoise
-  (147, 112, 219), # PaleVioletRed
-  (213, 239, 255), # PapayaWhip
-  (185, 218, 255), # PeachPuff
-  (63, 133, 205), # Peru
-  (203, 192, 255), # Pink
-  (221, 160, 221), # Plum
-  (230, 224, 176), # PowderBlue
-  (128, 0, 128), # Purple
-  (0, 0, 255), # Red
-  (143, 143, 188), # RosyBrown
-  (225, 105, 65), # RoyalBlue
-  (19, 69, 139), # SaddleBrown
-  (0, 128, 0), # Green
-  (96, 164, 244), # SandyBrown
-  (87, 139, 46), # SeaGreen
-  (238, 245, 255), # SeaShell
-  (45, 82, 160), # Sienna
-  (192, 192, 192), # Silver
-  (235, 206, 135), # SkyBlue
-  (205, 90, 106), # SlateBlue
-  (144, 128, 112), # SlateGray
-  (144, 128, 112), # SlateGrey
-  (250, 250, 255), # Snow
-  (127, 255, 0), # SpringGreen
-  (180, 130, 70), # SteelBlue
-  (47, 255, 173), # GreenYellow
-  (128, 128, 0), # Teal
-  (216, 191, 216), # Thistle
-  (71, 99, 255), # Tomato
-  (208, 224, 64), # Turquoise
-  (238, 130, 238), # Violet
-  (179, 222, 245), # Wheat
-  (255, 255, 255), # White
-  (245, 245, 245), # WhiteSmoke
-  (0, 255, 255), # Yellow
-  (50, 205, 154), # YellowGreen
-]
-
 
 def draw_bounding_box_on_image_cv(image,
                                   ymin,
                                   xmin,
                                   ymax,
                                   xmax,
-                                  color='red',
+                                  color=(0, 0, 255),
                                   thickness=4,
                                   display_str_list=(),
                                   use_normalized_coordinates=True):
@@ -271,14 +109,41 @@ def draw_bounding_box_on_image_array_cv(image,
   draw_bounding_box_on_image_cv(image, ymin, xmin, ymax, xmax, color,
                              thickness, display_str_list,
                              use_normalized_coordinates)
+  return
 
+def draw_mask_on_image_array_cv(image, mask, color=(0, 0, 255), alpha=0.4):
+  """Draws mask on an image.
+  Args:
+    image: uint8 numpy array with shape (img_height, img_height, 3)
+    mask: a uint8 numpy array of shape (img_height, img_height) with
+      values between either 0 or 1.
+    color: color to draw the keypoints with. Default is red.
+    alpha: transparency value between 0 and 1. (default: 0.4)
+  Raises:
+    ValueError: On incorrect data type for image or masks.
+  """
+  if image.dtype != np.uint8:
+    raise ValueError('`image` not of type np.uint8')
+  if mask.dtype != np.uint8:
+    raise ValueError('`mask` not of type np.uint8')
+  if np.any(np.logical_and(mask != 1, mask != 0)):
+    raise ValueError('`mask` elements should be in [0, 1]')
+  if image.shape[:2] != mask.shape:
+    raise ValueError('The image has spatial dimensions %s but the mask has '
+                     'dimensions %s' % (image.shape[:2], mask.shape))
+  mask = STANDARD_COLORS_ARRAY[mask]
+  # cv2.addWeighted(cv_bgr_under, alpha_under, cv_bgr_upper, alpha_upper, gamma, output_image)
+  cv2.addWeighted(mask, alpha, image, 1.0, 0, image)
+  return
 
+  
 def visualize_boxes_and_labels_on_image_array(
     image,
     boxes,
     classes,
     scores,
     category_index,
+    instance_masks=None,
     use_normalized_coordinates=False,
     max_boxes_to_draw=20,
     min_score_thresh=.5,
@@ -325,11 +190,14 @@ def visualize_boxes_and_labels_on_image_array(
   # that correspond to the same location.
   box_to_display_str_map = collections.defaultdict(list)
   box_to_color_map = collections.defaultdict(str)
+  box_to_instance_masks_map = {}  
   if not max_boxes_to_draw:
     max_boxes_to_draw = boxes.shape[0]
   for i in range(min(max_boxes_to_draw, boxes.shape[0])):
     if scores is None or scores[i] > min_score_thresh:
       box = tuple(boxes[i].tolist())
+      if instance_masks is not None:
+        box_to_instance_masks_map[box] = instance_masks[0][i]
       if scores is None:
         box_to_color_map[box] = groundtruth_box_visualization_color
       else:
@@ -356,6 +224,12 @@ def visualize_boxes_and_labels_on_image_array(
   # Draw all boxes onto image.
   for box, color in box_to_color_map.items():
     ymin, xmin, ymax, xmax = box
+    if instance_masks is not None:
+      draw_mask_on_image_array_cv(
+        image,
+        box_to_instance_masks_map[box],
+        color=color
+      )
     draw_bounding_box_on_image_array_cv(
         image,
         ymin,
