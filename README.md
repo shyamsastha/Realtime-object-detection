@@ -37,7 +37,7 @@ See also:<br>
 - login Jetson TX2. Desktop login or ssh remote login. `ssh -C -Y ubuntu@xxx.xxx.xxx.xxx`
 - edit `config.yml` for your environment. (Ex. video_input: 0 # for PC)
 - run `python run_stream.py` realtime object detection from webcam (Multi-Threading)
-- or run `python run_video.py` realtime object detection movie file (Multi-Threading)
+- or run `python run_video.py` realtime object detection from movie file (Multi-Threading)
 - wait few minuts.
 - Multi-Threading is better performance than Multi-Processing. Multi-Processing bottleneck is interprocess communication.
 <br />
