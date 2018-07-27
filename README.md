@@ -36,7 +36,8 @@ See also:<br>
 ## Getting Started:
 - login Jetson TX2. Desktop login or ssh remote login. `ssh -C -Y ubuntu@xxx.xxx.xxx.xxx`
 - edit `config.yml` for your environment. (Ex. video_input: 0 # for PC)
-- run `python run_object_detection.py` realtime object detection (Multi-Threading)
+- run `python run_stream.py` realtime object detection from webcam (Multi-Threading)
+- or run `python run_video.py` realtime object detection movie file (Multi-Threading)
 - wait few minuts.
 - Multi-Threading is better performance than Multi-Processing. Multi-Processing bottleneck is interprocess communication.
 <br />
@@ -61,6 +62,13 @@ video_input: 1
 * Onboard camera on TX2
 ```
 video_input: "nvcamerasrc ! video/x-raw(memory:NVMM), width=(int)1280, height=(int)720,format=(string)I420, framerate=(fraction)30/1 ! nvvidconv flip-method=0 ! video/x-raw, format=(string)BGRx ! videoconvert ! video/x-raw, format=(string)BGR ! appsink"
+```
+
+### Save to movie
+Save detection frame to movie file. (./movie/output_unixtime.avi)  
+Requires a lot of disk space.  
+```
+save_to_movie: True
 ```
 
 ####  Without Visualization
@@ -93,7 +101,8 @@ vis_worker: False
 max_vis_fps: 30
 vis_text: True
 ```
-* Visualization FPS limit with Multi-Processing
+* Visualization FPS limit with Multi-Processing<br>
+This is good to use with `save_to_movie: True`.
 ```
 visualize: True
 vis_worker: True
@@ -150,6 +159,9 @@ VFrames: visualization frames in fps_interval. <br>
 VDrops: When multi-processing visualization is bottleneck, drops. <br>
 
 ## Updates:
+- Add from movie.
+- Add save_to_movie.
+
 - BETA: Support MASK R-CNN models.
 
 - Always split GPU/CPU device.

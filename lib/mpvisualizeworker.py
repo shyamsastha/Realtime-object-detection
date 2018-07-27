@@ -51,36 +51,20 @@ class MPVisualizeWorker():
         return
 
     def execution(self, cfg, in_con):
+        """
+        cv2.imshow()
+        """
+
+        """
+        q_in: {'image':image, 'vis_in_time':time.time()}
+        """
         q_in = Queue.Queue()
-
-        """ """ """ """ """ """ """ """ """ """ """
-        GET CONFIG
-        """ """ """ """ """ """ """ """ """ """ """
-        VISUALIZE            = cfg['visualize']
-        MAX_VIS_FPS          = cfg['max_vis_fps']
-        VIS_TEXT             = cfg['vis_text']
-        FPS_INTERVAL         = cfg['fps_interval']
-        SPLIT_MODEL          = cfg['split_model']
-        DEBUG_MODE           = cfg['debug_mode']
-        MODEL_TYPE           = cfg['model_type']
-        """ """
-        has_mask = False
-        if MODEL_TYPE == 'mask_v1':
-            has_mask = True
-
-        """ """ """ """ """ """ """ """ """ """ """
-        LOAD LABEL MAP
-        """ """ """ """ """ """ """ """ """ """ """
-        llm = LoadLabelMap()
-        category_index = llm.load_label_map(cfg)
-        """ """
 
         """ """ """ """ """ """ """ """ """ """ """
         START RECEIVE THREAD
         """ """ """ """ """ """ """ """ """ """ """
         start_receiver(in_con, q_in, MPVariable.vis_drop_frames)
 
-        vis_frames = 0
         try:
             while MPVariable.running.value:
                 if q_in.empty():
@@ -93,18 +77,8 @@ class MPVisualizeWorker():
                     q_in.task_done()
                     break
 
-                #if q['mode'] == MPVariable.DROP_MODE:
-                #    q_in.task_done()
-                #    continue
-
-                vis_in_time = time.time()
-                image = extras['image']
-                if not has_mask:
-                    boxes, scores, classes, num, extras = q['results'][0], q['results'][1], q['results'][2], q['results'][3], q['extras']
-                    image = visualization(category_index, image, boxes, scores, classes, DEBUG_MODE, VIS_TEXT, FPS_INTERVAL)
-                else:
-                    boxes, scores, classes, num, masks, extras = q['results'][0], q['results'][1], q['results'][2], q['results'][3], q['results'][4], q['extras']
-                    image = visualization(category_index, image, boxes, scores, classes, DEBUG_MODE, VIS_TEXT, FPS_INTERVAL, masks=masks)
+                image = q['image']
+                vis_in_time = q['vis_in_time']
                 """
                 SHOW
                 """

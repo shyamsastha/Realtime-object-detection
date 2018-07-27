@@ -1,6 +1,5 @@
 import numpy as np
 from tf_utils import visualization_utils_cv2 as vis_util
-from lib.webcam import WebcamVideoStream
 from lib.session_worker import SessionWorker
 from lib.load_graph_nms_v1 import LoadFrozenGraph
 from lib.load_label_map import LoadLabelMap
@@ -29,8 +28,8 @@ class NMSV1():
         """ """ """ """ """ """ """ """ """ """ """
         GET CONFIG
         """ """ """ """ """ """ """ """ """ """ """
-        VIDEO_INPUT          = cfg['video_input']
         FORCE_GPU_COMPATIBLE = cfg['force_gpu_compatible']
+        SAVE_TO_MOVIE        = cfg['save_to_movie']
         VISUALIZE            = cfg['visualize']
         VIS_WORKER           = cfg['vis_worker']
         VIS_TEXT             = cfg['vis_text']
@@ -47,6 +46,11 @@ class NMSV1():
         DEBUG_MODE           = cfg['debug_mode']
         LABEL_PATH           = cfg['label_path']
         NUM_CLASSES          = cfg['num_classes']
+        FROM_CAMERA          = cfg['from_camera']
+        if FROM_CAMERA:
+            VIDEO_INPUT = cfg['camera_input']
+        else:
+            VIDEO_INPUT = cfg['movie_input']
         """ """
 
         """ """ """ """ """ """ """ """ """ """ """
@@ -168,7 +172,12 @@ class NMSV1():
         """ """ """ """ """ """ """ """ """ """ """
         START CAMERA
         """ """ """ """ """ """ """ """ """ """ """
-        video_stream = WebcamVideoStream(VIDEO_INPUT, WIDTH, HEIGHT).start()
+        if FROM_CAMERA:
+            from lib.webcam import WebcamVideoStream as VideoReader
+        else:
+            from lib.video import VideoReader
+        video_reader = VideoReader()
+        video_reader.start(VIDEO_INPUT, WIDTH, HEIGHT, save_to_movie=SAVE_TO_MOVIE)
         """ """
 
         """ """ """ """ """ """ """ """ """ """ """
@@ -178,7 +187,7 @@ class NMSV1():
         sleep_interval = 0.005
         top_in_time = None
         try:
-            while video_stream.running and MPVariable.running.value:
+            while video_reader.running and MPVariable.running.value:
                 if top_in_time is None:
                     top_in_time = time.time()
                 """
@@ -186,16 +195,16 @@ class NMSV1():
                 """
                 if gpu_worker.is_sess_empty(): # must need for speed
                     cap_in_time = time.time()
-                    frame = video_stream.read()
+                    frame = video_reader.read()
+                    if frame is None:
+                        MPVariable.running.value = False
+                        break
                     image_expanded = np.expand_dims(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB), axis=0) # np.expand_dims is faster than []
                     #image_expanded = np.expand_dims(frame, axis=0) # BGR image for input. Of couse, bad accuracy in RGB trained model, but speed up.
                     cap_out_time = time.time()
                     # put new queue
                     gpu_feeds = {image_tensor: image_expanded}
-                    if VISUALIZE:
-                        gpu_extras = {'image':frame, 'top_in_time':top_in_time, 'cap_in_time':cap_in_time, 'cap_out_time':cap_out_time} # for visualization frame
-                    else:
-                        gpu_extras = {'top_in_time':top_in_time, 'cap_in_time':cap_in_time, 'cap_out_time':cap_out_time}
+                    gpu_extras = {'image':frame, 'top_in_time':top_in_time, 'cap_in_time':cap_in_time, 'cap_out_time':cap_out_time} # always image draw.
                     gpu_worker.put_sess_queue(gpu_opts, gpu_feeds, gpu_extras)
 
                 g = gpu_worker.get_result_queue()
@@ -231,16 +240,20 @@ class NMSV1():
                 det_out_time = time.time()
 
                 """
+                ALWAYS BOX DRAW ON IMAGE
+                """
+                vis_in_time = time.time()
+                image = extras['image']
+                image = visualization(category_index, image, boxes, scores, classes, DEBUG_MODE, VIS_TEXT, FPS_INTERVAL)
+
+                """
                 VISUALIZATION
                 """
                 if VISUALIZE:
                     if (MPVariable.vis_skip_rate.value == 0) or (proc_frame_counter % MPVariable.vis_skip_rate.value < 1):
                         if VIS_WORKER:
-                            q_out.put(q)
+                            q_out.put({'image':image, 'vis_in_time':vis_in_time})
                         else:
-                            vis_in_time = time.time()
-                            image = extras['image']
-                            image = visualization(category_index, image, boxes, scores, classes, DEBUG_MODE, VIS_TEXT, FPS_INTERVAL)
                             """
                             SHOW
                             """
@@ -263,6 +276,16 @@ class NMSV1():
                         if proc_frame_counter % DET_INTERVAL == 0 and score > DET_TH:
                             label = category_index[_class]['name']
                             print("label: {}\nscore: {}\nbox: {}".format(label, score, box))
+
+                    MPVariable.vis_frame_counter.value += 1
+                    vis_out_time = time.time()
+                    """
+                    PROCESSING TIME
+                    """
+                    vis_proc_time = vis_out_time - vis_in_time
+                            
+                if SAVE_TO_MOVIE:
+                    video_reader.save(image)
 
                 proc_frame_counter += 1
                 if proc_frame_counter > 100000:
@@ -324,7 +347,7 @@ class NMSV1():
             gpu_worker.stop()
             if SPLIT_MODEL:
                 cpu_worker.stop()
-            video_stream.stop()
+            video_reader.stop()
 
             if VISUALIZE:
                 cv2.destroyAllWindows()

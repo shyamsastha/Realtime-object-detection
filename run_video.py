@@ -19,6 +19,7 @@ About repogitory: Forked from GustavZ's github.
 https://github.com/GustavZ/realtime_object_detection
 
 Updates:
+- Add save_to_movie.
 - Support MASK R-CNN
 - Support ssd_mobilenet_v2, ssdlite_mobilenet_v2, ssd_inception_v2_coco
 
@@ -52,6 +53,7 @@ def load_config():
             cfg = yaml.load(ymlfile)
     else:
         raise FileNotFoundError(("File not found: config.yml"))
+    cfg.update({'from_camera':False})
     return cfg
 
 def log_format(debug_mode):

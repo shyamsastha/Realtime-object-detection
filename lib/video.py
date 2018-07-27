@@ -5,11 +5,7 @@ import threading
 import time
 import os
 
-class WebcamVideoStream:
-    """
-    Reference:
-    https://www.pyimagesearch.com/2015/12/21/increasing-webcam-fps-with-python-and-opencv/
-    """
+class VideoReader:
     vid = None
     out = None
     running = False
@@ -22,6 +18,7 @@ class WebcamVideoStream:
             self.vid.release()
         if self.out is not None:
             self.out.release()
+
         return
 
     def mkdir(self, path):
@@ -35,8 +32,7 @@ class WebcamVideoStream:
         output_file[:-4] # remove .avi from filename
         """
         output_file = 'movie/' + output_prefix + '_' + str(time.time()) + '.avi'
-
-        # initialize the video camera stream and read the first frame
+        # initialize the video camera vid and read the first frame
         self.vid = cv2.VideoCapture(src)
         if not self.vid.isOpened():
             # camera failed
@@ -61,30 +57,14 @@ class WebcamVideoStream:
             fps = self.vid.get(cv2.CAP_PROP_FPS)
             fourcc = cv2.VideoWriter_fourcc('M','J','P','G')
             self.out = cv2.VideoWriter(output_file, int(fourcc), fps, (int(real_width), int(real_height)))
-
-        # start the thread to read frames from the video stream
-        t = threading.Thread(target=self.update, args=())
-        t.setDaemon(True)
-        t.start()
         return self
-
-    def update(self):
-        try:
-            # keep looping infinitely until the stream is closed
-            while self.running:
-                # otherwise, read the next frame from the stream
-                self.ret, self.frame = self.vid.read()
-        except:
-            import traceback
-            traceback.print_exc()
-            self.running = False
-        finally:
-            # if the thread indicator variable is set, stop the thread
-            self.vid.release()
-        return
 
     def read(self):
         # return the frame most recently read
+        self.ret, self.frame = self.vid.read()
+        if not self.ret:
+            self.stop()
+            return None
         return self.frame
 
     def save(self, frame):
