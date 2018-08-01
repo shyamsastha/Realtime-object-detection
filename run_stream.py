@@ -16,6 +16,7 @@ About repogitory: Forked from GustavZ's github.
 https://github.com/GustavZ/realtime_object_detection
 
 Updates:
+- support ssd_mobilenet_v1 11 Jun, 2017 model.
 - Add save_to_movie.
 - Support MASK R-CNN
 - Support ssd_mobilenet_v2, ssdlite_mobilenet_v2, ssd_inception_v2_coco
@@ -104,7 +105,11 @@ def main():
         fps = FPS(cfg)
         fps_counter_proc = fps.start_counter()
         fps_console_proc = fps.start_console()
-        if model_type == 'nms_v1':
+        if model_type == 'nms_v0':
+            from lib.detection_nms_v0 import NMSV0
+            detection = NMSV0()
+            detection.start(cfg)
+        elif model_type == 'nms_v1':
             from lib.detection_nms_v1 import NMSV1
             detection = NMSV1()
             detection.start(cfg)

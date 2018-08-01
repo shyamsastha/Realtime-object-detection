@@ -7,6 +7,7 @@ And focused on model split technique of ssd_mobilenet_v1.
 Download model from here: [detection_model_zoo](https://github.com/tensorflow/models/blob/master/research/object_detection/g3doc/detection_model_zoo.md)  
 
 Support models:  
+* ssd_mobilenet_v1_coco_11_06_2017 -> `model_type: 'nms_v0'`
 * ssd_mobilenet_v1_coco_2017_11_17 -> `model_type: 'nms_v1'`
 * ssd_inception_v2_coco_2017_11_17 -> `model_type: 'nms_v1'`
 * ssd_mobilenet_v1_coco_2018_01_28 -> `model_type: 'nms_v2'`
@@ -123,6 +124,19 @@ label_path: 'models/labels/mscoco_label_map.pbtxt'
 num_classes: 90
 ```
 
+* Splite shape
+`split_shape: 1917`<br>
+ExpandDims_1's shape. Ex:<br>
+
+| learned size | split_shape |
+|:--|:--|:--|:--|:--|:--|:--|
+| 300x300 | 1917 |
+| 400x400 | 3309 |
+| 500x500 | 5118 |
+| 600x600 | 7326 |
+
+See also: [Learn Split Model](About_Split-Model.md)
+
 * TensorRT
 split/non-split both support. Need Tensorflow with TensorRT support. (r1.9 has bug. I use r1.8 for pc)
 ```
@@ -159,6 +173,7 @@ VFrames: visualization frames in fps_interval. <br>
 VDrops: When multi-processing visualization is bottleneck, drops. <br>
 
 ## Updates:
+- support ssd_mobilenet_v1 11 Jun, 2017 model.
 - Add from movie.
 - Add save_to_movie.
 

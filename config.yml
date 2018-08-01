@@ -22,10 +22,22 @@ log_device: False           # Logs GPU / CPU device placement
 allow_memory_growth: True   # limits memory allocation to the actual needs
 debug_mode: False           # Show FPS spike value
 label_path: 'models/labels/mscoco_label_map.pbtxt' # default: mscoco 90 classes
-split_shape: 1917           # 1917, 7326, 3000, 51150. ExpandDims_1's shape.
+split_shape: 1917           # 1917, 3000, 3309, 5118, 7326, 51150. ExpandDims_1's shape.
 num_classes: 90
 
-# model_type supports 'nms_v1', 'nms_v2', 'trt_v1'.
+# model_type supports 'nms_v0', 'nms_v1', 'nms_v2', 'trt_v1', 'mask_v1'
+########################################
+# model_type: 'nms_v0'
+# split_shape: 1917
+# This is for 11 June 2017 model
+########################################
+# KNOWN MODELS
+# ssd_mobilenet_v1_coco_11_06_2017
+#model_type: 'nms_v0'
+#model_path: 'models/ssd_mobilenet_v1_coco_11_06_2017/frozen_inference_graph.pb'
+#split_shape: 1917
+
+
 ########################################
 # model_type: 'nms_v1'
 # split_shape: 1917
