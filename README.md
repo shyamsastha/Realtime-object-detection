@@ -129,7 +129,7 @@ num_classes: 90
 ExpandDims_1's shape. Ex:<br>
 
 | learned size | split_shape |
-|:--|:--|:--|:--|:--|:--|:--|
+|:--|:--|
 | 300x300 | 1917 |
 | 400x400 | 3309 |
 | 500x500 | 5118 |
