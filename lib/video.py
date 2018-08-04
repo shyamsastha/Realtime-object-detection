@@ -46,9 +46,9 @@ class VideoReader:
 
         # initialize the variable used to indicate if the thread should
         # check camera vid shape
-        real_width = int(self.vid.get(3))
-        real_height = int(self.vid.get(4))
-        print("Start video stream with shape: {},{}".format(real_width, real_height))
+        self.real_width = int(self.vid.get(3))
+        self.real_height = int(self.vid.get(4))
+        print("Start video stream with shape: {},{}".format(self.real_width, self.real_height))
         self.running = True
 
         """ save to movie """
@@ -56,8 +56,11 @@ class VideoReader:
             self.mkdir('movie')
             fps = self.vid.get(cv2.CAP_PROP_FPS)
             fourcc = cv2.VideoWriter_fourcc('M','J','P','G')
-            self.out = cv2.VideoWriter(output_file, int(fourcc), fps, (int(real_width), int(real_height)))
+            self.out = cv2.VideoWriter(output_file, int(fourcc), fps, (int(self.real_width), int(self.real_height)))
         return self
+
+    def getSize(self):
+        return (self.real_width, self.real_height)
 
     def read(self):
         # return the frame most recently read

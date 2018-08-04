@@ -100,9 +100,20 @@ class MASKV1():
             from lib.video import VideoReader
         video_reader = VideoReader()
         video_reader.start(VIDEO_INPUT, WIDTH, HEIGHT, save_to_movie=SAVE_TO_MOVIE)
+        frame_cols, frame_rows = video_reader.getSize()
         """ """
-        frame = video_reader.read()
-        rows, cols = frame.shape[:2]
+
+
+        """ """ """ """ """ """ """ """ """ """ """
+        FONT
+        """ """ """ """ """ """ """ """ """ """ """
+        """ STATISTICS FONT """
+        fontFace = cv2.FONT_HERSHEY_SIMPLEX
+        fontScale = frame_rows/1000.0
+        if fontScale < 0.4:
+            fontScale = 0.4
+        fontThickness = 1 + int(fontScale)
+
 
         """ """ """ """ """ """ """ """ """ """ """
         PREAPRE GRAPH MASK OUTPUT
@@ -115,7 +126,7 @@ class MASKV1():
         _detection_boxes = tf.slice(_detection_boxes, [0, 0], [_real_num_detection, -1])
         _detection_masks = tf.slice(_detection_masks, [0, 0, 0], [_real_num_detection, -1, -1])
         _detection_masks_reframed = utils_ops.reframe_box_masks_to_image_masks(
-            _detection_masks, _detection_boxes, rows, cols)
+            _detection_masks, _detection_boxes, frame_rows, frame_cols)
         _detection_masks_reframed = tf.cast(
             tf.greater(_detection_masks_reframed, 0.5), tf.uint8)
         # Follow the convention by adding back the batch dimension
@@ -284,7 +295,8 @@ class MASKV1():
                 """
                 vis_in_time = time.time()
                 image = extras['image']
-                image = visualization(category_index, image, boxes, scores, classes, DEBUG_MODE, VIS_TEXT, FPS_INTERVAL, masks=masks)
+                image = visualization(category_index, image, boxes, scores, classes, DEBUG_MODE, VIS_TEXT, FPS_INTERVAL,
+                                      fontFace=fontFace, fontScale=fontScale, fontThickness=fontThickness, masks=masks)
 
                 """
                 VISUALIZATION

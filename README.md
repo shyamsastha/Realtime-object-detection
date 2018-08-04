@@ -5,6 +5,9 @@ forked from GustavZ/realtime_object_detection: [https://github.com/GustavZ/realt
 And focused on model split technique of ssd_mobilenet_v1.  
 
 Download model from here: [detection_model_zoo](https://github.com/tensorflow/models/blob/master/research/object_detection/g3doc/detection_model_zoo.md)  
+```
+wget http://download.tensorflow.org/models/object_detection/ssd_mobilenet_v1_coco_2018_01_28.tar.gz
+```
 
 Support models:  
 * ssd_mobilenet_v1_coco_11_06_2017 -> `model_type: 'nms_v0'`
@@ -111,20 +114,37 @@ max_vis_fps: 30
 vis_text: True
 ```
 
-* Model type  
-The ssd_mobilenet_v1_coco_2017_11_17 has 4112 nodes. I will call this version 'nms_v1'.<br>
-The ssd_mobilenet_v1_coco_2018_01_28 has 4104 nodes. I will call this version 'nms_v2'.<br>
-And ssd_mobilenet_v2_coco_2018_03_29, ssdlite_mobilenet_v2_coco_2018_05_09, ssd_inception_v2_coco_2018_01_28 also 'nms_v2'.<br>
+* Model type
+| Model | model_type |
+|:--|:--|
+| ssd_mobilenet_v1_coco_11_06_2017 | nms_v0 |
+| ssd_mobilenet_v1_coco_2017_11_17 | nms_v1 |
+| ssd_inception_v2_coco_2017_11_17 | nms_v1 |
+| ssd_mobilenet_v1_coco_2018_01_28 | nms_v2 |
+| ssdlite_mobilenet_v2_coco_2018_05_09 | nms_v2 |
+| ssd_inception_v2_coco_2018_01_28 | nms_v2 |
+| ssd_mobilenet_v1_quantized_300x300_coco14_sync_2018_07_03 | nms_v2 |
+| ssd_mobilenet_v1_0.75_depth_quantized_300x300_coco14_sync_2018_07_03 | nms_v2 |
+| ssd_resnet50_v1_fpn_shared_box_predictor_640x640_coco14_sync_2018_07_03 | nms_v2 |
+| ssd_mobilenet_v1_fpn_shared_box_predictor_640x640_coco14_sync_2018_07_03 | nms_v2 |
+| ssd_mobilenet_v1_ppn_shared_box_predictor_300x300_coco14_sync_2018_07_03 | nms_v2 |
+| mask_rcnn_inception_resnet_v2_atrous_coco_2018_01_28 | mask_v1 |
+| mask_rcnn_inception_v2_coco_2018_01_28 | mask_v1 |
+| mask_rcnn_resnet101_atrous_coco_2018_01_28 | mask_v1 |
+| mask_rcnn_resnet50_atrous_coco_2018_01_28 | mask_v1 |
+
 The difference between 'nms_v1' and 'nms_v2' is BatchMultiClassNonMaxSuppression inputs.<br>
+`model_type: trt_v1` is somewhat special. See config.yml.<br>
+
 ```
-# ssd_mobilenet_v1_coco_2018_01_28 4104 nodes
+# ssd_mobilenet_v1_coco_2018_01_28
 model_type: 'nms_v2'
 model_path: 'models/ssd_mobilenet_v1_coco_2018_01_28/frozen_inference_graph.pb'
 label_path: 'models/labels/mscoco_label_map.pbtxt'
 num_classes: 90
 ```
 
-* Splite shape
+* Splite shape  
 `split_shape: 1917`<br>
 ExpandDims_1's shape. Ex:<br>
 

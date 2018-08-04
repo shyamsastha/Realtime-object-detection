@@ -177,7 +177,20 @@ class TRTV1():
             from lib.video import VideoReader
         video_reader = VideoReader()
         video_reader.start(VIDEO_INPUT, WIDTH, HEIGHT, save_to_movie=SAVE_TO_MOVIE)
+        frame_cols, frame_rows = video_reader.getSize()
         """ """
+
+
+        """ """ """ """ """ """ """ """ """ """ """
+        FONT
+        """ """ """ """ """ """ """ """ """ """ """
+        """ STATISTICS FONT """
+        fontFace = cv2.FONT_HERSHEY_SIMPLEX
+        fontScale = frame_rows/1000.0
+        if fontScale < 0.4:
+            fontScale = 0.4
+        fontThickness = 1 + int(fontScale)
+
 
         """ """ """ """ """ """ """ """ """ """ """
         DETECTION LOOP
@@ -243,7 +256,8 @@ class TRTV1():
                 """
                 vis_in_time = time.time()
                 image = extras['image']
-                image = visualization(category_index, image, boxes, scores, classes, DEBUG_MODE, VIS_TEXT, FPS_INTERVAL)
+                image = visualization(category_index, image, boxes, scores, classes, DEBUG_MODE, VIS_TEXT, FPS_INTERVAL,
+                                      fontFace=fontFace, fontScale=fontScale, fontThickness=fontThickness)
 
                 """
                 VISUALIZATION

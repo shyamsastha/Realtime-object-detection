@@ -16,7 +16,8 @@ elif PY3:
     import queue as Queue
 
 
-def visualization(category_index, image, boxes, scores, classes, debug_mode, vis_text, fps_interval, masks=None):
+def visualization(category_index, image, boxes, scores, classes, debug_mode, vis_text, fps_interval,
+                  fontFace=cv2.FONT_HERSHEY_SIMPLEX, fontScale=0.4, fontThickness=1, masks=None,):
     # Visualization of the results of a detection.
     vis_util.visualize_boxes_and_labels_on_image_array(
         image,
@@ -28,15 +29,31 @@ def visualization(category_index, image, boxes, scores, classes, debug_mode, vis
         use_normalized_coordinates=True,
         line_thickness=8)
     if vis_text:
+        display_str = []
+        max_text_width = 0
+        max_text_height = 0
         if not debug_mode:
-            cv2.putText(image,"fps: {:.1f}".format(MPVariable.fps.value), (10,30),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.75, (77, 255, 9), 2)
+            display_str.append("fps: {:.1f}".format(MPVariable.fps.value))
         else:
-            """ FOR PERFORMANCE DEBUG """
-            cv2.putText(image,"fps: {:.1f} 0.2sec".format(MPVariable.fps_snapshot.value), (10,30),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.75, (77, 255, 9), 2)
-            cv2.putText(image,"fps: {:.1f} {}sec".format(MPVariable.fps.value, fps_interval), (10,60),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.75, (77, 255, 9), 2)
+            display_str.append("fps: {:.1f} 0.2sec".format(MPVariable.fps_snapshot.value))
+            display_str.append("fps: {:.1f} {}sec".format(MPVariable.fps.value, fps_interval))
+
+        """ DRAW BLACK BOX AND TEXT """
+        [(text_width, text_height), baseLine] = cv2.getTextSize(text=display_str[0], fontFace=fontFace, fontScale=fontScale, thickness=fontThickness)
+        x_left = int(baseLine)
+        y_top = int(baseLine)
+        for i in range(len(display_str)):
+            [(text_width, text_height), baseLine] = cv2.getTextSize(text=display_str[i], fontFace=fontFace, fontScale=fontScale, thickness=fontThickness)
+            if max_text_width < text_width:
+                max_text_width = text_width
+            if max_text_height < text_height:
+                max_text_height = text_height
+        """ DRAW BLACK BOX """
+        cv2.rectangle(image, (x_left - 2, int(y_top)), (int(x_left + max_text_width + 2), int(y_top + len(display_str)*max_text_height*1.2+baseLine)), color=(0, 0, 0), thickness=-1)
+        """ DRAW FPS, TEXT """
+        for i in range(len(display_str)):
+            cv2.putText(image, display_str[i], org=(x_left, y_top + int(max_text_height*1.2 + (max_text_height*1.2 * i))), fontFace=fontFace, fontScale=fontScale, thickness=fontThickness, color=(77, 255, 9))
+
     return image
 
 

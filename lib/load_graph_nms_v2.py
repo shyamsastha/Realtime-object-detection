@@ -113,6 +113,8 @@ class LoadFrozenGraph():
         slice1_in = tf.placeholder(tf.float32, shape=(None, split_shape, num_classes), name=SPLIT_TARGET_SLICE1_NAME)
         expand_in = tf.placeholder(tf.float32, shape=(None, split_shape, 1, 4), name=SPLIT_TARGET_EXPAND_NAME) # shape=output shape
         stack_in = tf.placeholder(tf.float32, shape=(None), name=SPLIT_TARGET_STACK_NAME) # array of float
+        #slice1_in = tf.placeholder(tf.float32, shape=(1, None, None), name=SPLIT_TARGET_SLICE1_NAME)
+        #expand_in = tf.placeholder(tf.float32, shape=(1, None, 1, None), name=SPLIT_TARGET_EXPAND_NAME) # shape=output shape
 
         """
         Load placeholder's graph_def.
