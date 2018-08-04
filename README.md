@@ -9,28 +9,29 @@ Download model from here: [detection_model_zoo](https://github.com/tensorflow/mo
 wget http://download.tensorflow.org/models/object_detection/ssd_mobilenet_v1_coco_2018_01_28.tar.gz
 ```
 
-Support models:  
-* ssd_mobilenet_v1_coco_11_06_2017 -> `model_type: 'nms_v0'`
-* ssd_mobilenet_v1_coco_2017_11_17 -> `model_type: 'nms_v1'`
-* ssd_inception_v2_coco_2017_11_17 -> `model_type: 'nms_v1'`
-* ssd_mobilenet_v1_coco_2018_01_28 -> `model_type: 'nms_v2'`
-* ssd_mobilenet_v2_coco_2018_03_29 -> `model_type: 'nms_v2'`
-* ssdlite_mobilenet_v2_coco_2018_05_09 -> `model_type: 'nms_v2'`
-* ssd_inception_v2_coco_2018_01_28 -> `model_type: 'nms_v2'`
-* ssd_mobilenet_v1_quantized_300x300_coco14_sync_2018_07_03 -> `model_type: 'nms_v2'`
-* ssd_mobilenet_v1_0.75_depth_300x300_coco14_sync_2018_07_03 -> `model_type: 'nms_v2'`
-* ssd_mobilenet_v1_0.75_depth_quantized_300x300_coco14_sync_2018_07_03 -> `model_type: 'nms_v2'`
-* ssd_resnet50_v1_fpn_shared_box_predictor_640x640_coco14_sync_2018_07_03 -> `model_type: 'nms_v2'` `split_shape: 51150`
-* ssd_mobilenet_v1_fpn_shared_box_predictor_640x640_coco14_sync_2018_07_03 -> `model_type: 'nms_v2'` `split_shape: 51150`
-* ssd_mobilenet_v1_ppn_shared_box_predictor_300x300_coco14_sync_2018_07_03 -> `model_type: 'nms_v2'` `split_shape: 3000`
+## Support models
+| Model | model_type | split_shape |
+|:--|:--|:--|
+| ssd_mobilenet_v1_coco_11_06_2017 | nms_v0 | 1917 |
+| ssd_mobilenet_v1_coco_2017_11_17 | nms_v1 | 1917 |
+| ssd_inception_v2_coco_2017_11_17 | nms_v1 | 1917 |
+| ssd_mobilenet_v1_coco_2018_01_28 | nms_v2 | 1917 |
+| ssdlite_mobilenet_v2_coco_2018_05_09 | nms_v2 | 1917 |
+| ssd_inception_v2_coco_2018_01_28 | nms_v2 | 1917 |
+| ssd_mobilenet_v1_quantized_300x300_coco14_sync_2018_07_03 | nms_v2 | 1917 |
+| ssd_mobilenet_v1_0.75_depth_quantized_300x300_coco14_sync_2018_07_03 | nms_v2 | 1917 |
+| ssd_resnet50_v1_fpn_shared_box_predictor_640x640_coco14_sync_2018_07_03 | nms_v2 | 51150 |
+| ssd_mobilenet_v1_fpn_shared_box_predictor_640x640_coco14_sync_2018_07_03 | nms_v2 | 51150 |
+| ssd_mobilenet_v1_ppn_shared_box_predictor_300x300_coco14_sync_2018_07_03 | nms_v2 | 3000 |
+| mask_rcnn_inception_resnet_v2_atrous_coco_2018_01_28 | mask_v1 | |
+| mask_rcnn_inception_v2_coco_2018_01_28 | mask_v1 | |
+| mask_rcnn_resnet101_atrous_coco_2018_01_28 | mask_v1 | |
+| mask_rcnn_resnet50_atrous_coco_2018_01_28 | mask_v1 | |
+
 * TensorRT -> `model_type: 'trt_v1'`<br>
 Requirements: [https://github.com/NVIDIA-Jetson/tf_trt_models](https://github.com/NVIDIA-Jetson/tf_trt_models)<br>
 
-BETA: PC only
-* mask_rcnn_inception_resnet_v2_atrous_coco_2018_01_28 -> `model_type: 'mask_v1'`
-* mask_rcnn_inception_v2_coco_2018_01_28 -> `model_type: 'mask_v1'`
-* mask_rcnn_resnet101_atrous_coco_2018_01_28 -> `model_type: 'mask_v1'`
-* mask_rcnn_resnet50_atrous_coco_2018_01_28 -> `model_type: 'mask_v1'`<br>
+* Mask R-CNN: PC only<br>
 split_model can be True, but it's slow yet.<br>
 
 See also:<br>
@@ -115,25 +116,9 @@ vis_text: True
 ```
 
 * Model type
-
-| Model | model_type |
-|:--|:--|
-| ssd_mobilenet_v1_coco_11_06_2017 | nms_v0 |
-| ssd_mobilenet_v1_coco_2017_11_17 | nms_v1 |
-| ssd_inception_v2_coco_2017_11_17 | nms_v1 |
-| ssd_mobilenet_v1_coco_2018_01_28 | nms_v2 |
-| ssdlite_mobilenet_v2_coco_2018_05_09 | nms_v2 |
-| ssd_inception_v2_coco_2018_01_28 | nms_v2 |
-| ssd_mobilenet_v1_quantized_300x300_coco14_sync_2018_07_03 | nms_v2 |
-| ssd_mobilenet_v1_0.75_depth_quantized_300x300_coco14_sync_2018_07_03 | nms_v2 |
-| ssd_resnet50_v1_fpn_shared_box_predictor_640x640_coco14_sync_2018_07_03 | nms_v2 |
-| ssd_mobilenet_v1_fpn_shared_box_predictor_640x640_coco14_sync_2018_07_03 | nms_v2 |
-| ssd_mobilenet_v1_ppn_shared_box_predictor_300x300_coco14_sync_2018_07_03 | nms_v2 |
-| mask_rcnn_inception_resnet_v2_atrous_coco_2018_01_28 | mask_v1 |
-| mask_rcnn_inception_v2_coco_2018_01_28 | mask_v1 |
-| mask_rcnn_resnet101_atrous_coco_2018_01_28 | mask_v1 |
-| mask_rcnn_resnet50_atrous_coco_2018_01_28 | mask_v1 |
-
+```
+model_type: 'nms_v2'
+```
 The difference between 'nms_v1' and 'nms_v2' is BatchMultiClassNonMaxSuppression inputs.<br>
 `model_type: trt_v1` is somewhat special. See config.yml.<br>
 
