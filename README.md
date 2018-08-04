@@ -114,7 +114,8 @@ max_vis_fps: 30
 vis_text: True
 ```
 
-* Model type  
+* Model type
+
 | Model | model_type |
 |:--|:--|
 | ssd_mobilenet_v1_coco_11_06_2017 | nms_v0 |
