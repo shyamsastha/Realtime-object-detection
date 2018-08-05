@@ -99,21 +99,19 @@ class LoadFrozenGraph():
         split_shape = self.cfg['split_shape']
         num_classes = self.cfg['num_classes']
 
-        """
-        Split in Gather
-        """
+        """ SPLIT TARGET NAME """
         SPLIT_TARGET_NAME = ['Postprocessor/Sigmoid',
                              'Postprocessor/ExpandDims',
-                             ]
+        ]
         tf.reset_default_graph()
 
         """ ADD CPU INPUT """
         target_in = [tf.placeholder(tf.float32, shape=(None, split_shape, num_classes), name=SPLIT_TARGET_NAME[0]),
                      tf.placeholder(tf.float32, shape=(None, split_shape, 1, 4), name=SPLIT_TARGET_NAME[1]),
-                     ]
+        ]
         #target_in = [tf.placeholder(tf.float32, shape=(1, None, None), name=SPLIT_TARGET_NAME[0]),
         #             tf.placeholder(tf.float32, shape=(1, None, 1, None), name=SPLIT_TARGET_NAME[1]),
-        #             ]
+        #]
 
         """
         Load placeholder's graph_def.
@@ -149,7 +147,6 @@ class LoadFrozenGraph():
             Alert if split target is not in the graph.
             """
             dest_nodes = SPLIT_TARGET_NAME
-
             for d in dest_nodes:
                 assert d in name_to_node_map, "%s is not in graph" % d
 

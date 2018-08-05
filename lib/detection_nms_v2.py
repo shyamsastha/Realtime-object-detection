@@ -88,12 +88,15 @@ class NMSV2():
         num_detections = graph.get_tensor_by_name('num_detections:0')
 
         if SPLIT_MODEL:
-            slice1_out = graph.get_tensor_by_name('Postprocessor/Slice:0')
-            expand_out = graph.get_tensor_by_name('Postprocessor/ExpandDims_1:0')
-            slice1_in = graph.get_tensor_by_name('Postprocessor/Slice_1:0')
-            expand_in = graph.get_tensor_by_name('Postprocessor/ExpandDims_1_1:0')
-            stack_out = graph.get_tensor_by_name('Postprocessor/stack_1:0')
-            stack_in = graph.get_tensor_by_name('Postprocessor/stack_1_1:0')
+            SPLIT_TARGET_NAME = ['Postprocessor/Slice',
+                                 'Postprocessor/ExpandDims_1',
+                                 'Postprocessor/stack_1'
+            ]
+            split_out = []
+            split_in = []
+            for stn in SPLIT_TARGET_NAME:
+                split_out += [graph.get_tensor_by_name(stn+':0')]
+                split_in += [graph.get_tensor_by_name(stn+'_1:0')]
         """ """
 
         """ """ """ """ """ """ """ """ """ """ """
@@ -104,7 +107,7 @@ class NMSV2():
         cpu_tag = 'CPU'
         gpu_worker = SessionWorker(gpu_tag, graph, config)
         if SPLIT_MODEL:
-            gpu_opts = [slice1_out, expand_out, stack_out]
+            gpu_opts = split_out
             cpu_worker = SessionWorker(cpu_tag, graph, config)
             cpu_opts = [detection_boxes, detection_scores, detection_classes, num_detections]
         else:
@@ -147,11 +150,9 @@ class NMSV2():
             """
             PUT DUMMY DATA INTO CPU WORKER
             """
-            slice1 = np.zeros((1, SPLIT_SHAPE, NUM_CLASSES))
-            expand = np.zeros((1, SPLIT_SHAPE, 1, 4))
-            stack = [[0., 0., 1., 1.]]
-
-            cpu_feeds = {slice1_in: slice1, expand_in: expand, stack_in: stack}
+            cpu_feeds = {split_in[0]: np.zeros((1, SPLIT_SHAPE, NUM_CLASSES)),
+                         split_in[1]: np.zeros((1, SPLIT_SHAPE, 1, 4)),
+                         split_in[2]: [[0., 0., 1., 1.]]}
             cpu_extras = {}
             cpu_worker.put_sess_queue(cpu_opts, cpu_feeds, cpu_extras)
         """
@@ -228,11 +229,13 @@ class NMSV2():
                     # if g is None: gpu thread has no output queue. ok skip, let's check cpu thread.
                     if g is not None:
                         # gpu thread has output queue.
-                        slice1, expand, stack, extras = g['results'][0], g['results'][1], g['results'][2], g['extras']
+                        result_slice_out, extras = g['results'], g['extras']
                         if cpu_worker.is_sess_empty():
                             # When cpu thread has no next queue, put new queue.
                             # else, drop gpu queue.
-                            cpu_feeds = {slice1_in: slice1, expand_in: expand, stack_in: stack}
+                            cpu_feeds = {}
+                            for i in range(len(result_slice_out)):
+                                cpu_feeds.update({split_in[i]:result_slice_out[i]})
                             cpu_extras = extras
                             cpu_worker.put_sess_queue(cpu_opts, cpu_feeds, cpu_extras)
                         # else: cpu thread is busy. don't put new queue. let's check cpu result queue.

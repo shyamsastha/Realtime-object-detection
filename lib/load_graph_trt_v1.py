@@ -93,27 +93,28 @@ class LoadFrozenGraph():
         split_shape = self.cfg['split_shape']
         num_classes = self.cfg['num_classes']
 
-        SPLIT_TARGET_SLICE1_NAME = 'Postprocessor/Slice' # Tensor
-        SPLIT_TARGET_EXPAND_NAME = 'Postprocessor/ExpandDims_1' # Tensor
-
+        """ SPLIT TARGET NAME """
+        SPLIT_TARGET_NAME = ['Postprocessor/Slice', # Tensor
+                             'Postprocessor/ExpandDims_1', # Tensor
+        ]
         tf.reset_default_graph()
 
         """ ADD CPU INPUT """
-        slice1_in = tf.placeholder(tf.float32, shape=(None, split_shape, num_classes), name=SPLIT_TARGET_SLICE1_NAME)
-        expand_in = tf.placeholder(tf.float32, shape=(None, split_shape, 1, 4), name=SPLIT_TARGET_EXPAND_NAME) # shape=output shape
+        """ ADD CPU INPUT """
+        target_in = [tf.placeholder(tf.float32, shape=(None, split_shape, num_classes), name=SPLIT_TARGET_NAME[0]),
+                     tf.placeholder(tf.float32, shape=(None, split_shape, 1, 4), name=SPLIT_TARGET_NAME[1]),
+        ]
 
         """
         Load placeholder's graph_def.
         """
+        target_def = []
         for node in tf.get_default_graph().as_graph_def().node:
-            if node.name == SPLIT_TARGET_SLICE1_NAME:
-                slice1_def = node
-            if node.name == SPLIT_TARGET_EXPAND_NAME:
-                expand_def = node
-
+            for stn in SPLIT_TARGET_NAME:
+                if node.name == stn:
+                    target_def += [node]
         tf.reset_default_graph()
 
-    
         """
         Check the connection of all nodes.
         edges[] variable has input information for all nodes.
@@ -132,7 +133,7 @@ class LoadFrozenGraph():
         """
         Alert if split target is not in the graph.
         """
-        dest_nodes = [SPLIT_TARGET_SLICE1_NAME, SPLIT_TARGET_EXPAND_NAME]
+        dest_nodes = SPLIT_TARGET_NAME
         for d in dest_nodes:
             assert d in name_to_node_map, "%s is not in graph" % d
 
@@ -168,8 +169,8 @@ class LoadFrozenGraph():
         nodes_to_remove_list = sorted(list(nodes_to_remove), key=lambda n: node_seq[n])
 
         remove = graph_pb2.GraphDef()
-        remove.node.extend([slice1_def])
-        remove.node.extend([expand_def])
+        for td in target_def:
+            remove.node.extend([td])
         for n in nodes_to_remove_list:
             remove.node.extend([copy.deepcopy(name_to_node_map[n])])
 

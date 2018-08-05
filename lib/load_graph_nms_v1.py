@@ -99,24 +99,25 @@ class LoadFrozenGraph():
         split_shape = self.cfg['split_shape']
         num_classes = self.cfg['num_classes']
 
-        SPLIT_TARGET_SCORE_NAME = 'Postprocessor/convert_scores'
-        SPLIT_TARGET_EXPAND_NAME = 'Postprocessor/ExpandDims_1'
-
+        """ SPLIT TARGET NAME """
+        SPLIT_TARGET_NAME = ['Postprocessor/convert_scores',
+                             'Postprocessor/ExpandDims_1',
+        ]
         tf.reset_default_graph()
 
         """ ADD CPU INPUT """
-        score_in = tf.placeholder(tf.float32, shape=(None, split_shape, num_classes), name=SPLIT_TARGET_SCORE_NAME)
-        expand_in = tf.placeholder(tf.float32, shape=(None, split_shape, 1, 4), name=SPLIT_TARGET_EXPAND_NAME)
+        target_in = [tf.placeholder(tf.float32, shape=(None, split_shape, num_classes), name=SPLIT_TARGET_NAME[0]),
+                     tf.placeholder(tf.float32, shape=(None, split_shape, 1, 4), name=SPLIT_TARGET_NAME[1]),
+        ]
 
         """
         Load placeholder's graph_def.
         """
+        target_def = []
         for node in tf.get_default_graph().as_graph_def().node:
-            if node.name == SPLIT_TARGET_SCORE_NAME:
-                score_def = node
-            if node.name == SPLIT_TARGET_EXPAND_NAME:
-                expand_def = node
-
+            for stn in SPLIT_TARGET_NAME:
+                if node.name == stn:
+                    target_def += [node]
         tf.reset_default_graph()
 
         graph_def = tf.GraphDef()
@@ -134,19 +135,19 @@ class LoadFrozenGraph():
             seq = 0
             for node in graph_def.node:
                 n = self.node_name(node.name)
-                #if n == SPLIT_TARGET_EXPAND_NAME or  n == SPLIT_TARGET_SCORE_NAME:
-                #    print(node)
+                #if n in SPLIT_TARGET_NAME:
+                #     print(node)
                 name_to_node_map[n] = node
                 edges[n] = [self.node_name(x) for x in node.input]
-                #if n == SPLIT_TARGET_EXPAND_NAME or  n == SPLIT_TARGET_SCORE_NAME:
-                #    print(edges[n])
+                #if n in SPLIT_TARGET_NAME:
+                #     print(edges[n])
                 node_seq[n] = seq
                 seq += 1
 
             """
             Alert if split target is not in the graph.
             """
-            dest_nodes = [SPLIT_TARGET_SCORE_NAME, SPLIT_TARGET_EXPAND_NAME]
+            dest_nodes = SPLIT_TARGET_NAME
             for d in dest_nodes:
                 assert d in name_to_node_map, "%s is not in graph" % d
 
@@ -182,8 +183,8 @@ class LoadFrozenGraph():
             nodes_to_remove_list = sorted(list(nodes_to_remove), key=lambda n: node_seq[n])
 
             remove = graph_pb2.GraphDef()
-            remove.node.extend([score_def])
-            remove.node.extend([expand_def])
+            for td in target_def:
+                remove.node.extend([td])
             for n in nodes_to_remove_list:
                 remove.node.extend([copy.deepcopy(name_to_node_map[n])])
 

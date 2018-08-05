@@ -44,7 +44,10 @@ That "None" will appear as "?".<br>
 Divide here.<br>
 Write the definition of this division point in the source code:[lib/load_graph_nms_v1.py](lib/load_graph_nms_v1.py) as follows.<br>
 ```python
-        SPLIT_TARGET_EXPAND_NAME = 'Postprocessor/ExpandDims_1'
+        """ SPLIT TARGET NAME """
+        SPLIT_TARGET_NAME = ['Postprocessor/convert_scores',
+                             'Postprocessor/ExpandDims_1',
+        ]
 ```
 
 #### Postprocessor/convert_scores
@@ -54,7 +57,10 @@ Shape of convert_scores is ?x1917x90. (see output shape)<br>
 Divide here.<br>
 Write the definition of this division point in the source code:[lib/load_graph_nms_v1.py](lib/load_graph_nms_v1.py) as follows.<br>
 ```python
-        SPLIT_TARGET_SCORE_NAME = 'Postprocessor/convert_scores'
+        """ SPLIT TARGET NAME """
+        SPLIT_TARGET_NAME = ['Postprocessor/convert_scores',
+                             'Postprocessor/ExpandDims_1',
+        ]
 ```
 
 <hr>
@@ -66,8 +72,9 @@ Write new inputs in default graph with tf.placeholder. source code:[lib/load_gra
         tf.reset_default_graph()
 
         """ ADD CPU INPUT """
-        score_in = tf.placeholder(tf.float32, shape=(None, split_shape, num_classes), name=SPLIT_TARGET_SCORE_NAME)
-        expand_in = tf.placeholder(tf.float32, shape=(None, split_shape, 1, 4), name=SPLIT_TARGET_EXPAND_NAME)
+        target_in = [tf.placeholder(tf.float32, shape=(None, split_shape, num_classes), name=SPLIT_TARGET_NAME[0]),
+                     tf.placeholder(tf.float32, shape=(None, split_shape, 1, 4), name=SPLIT_TARGET_NAME[1]),
+        ]
 ```
 The first, I reset the default graph. I wrote it to mean that the graph is empty at this time.<br>
 The shape is in the previous graph diagram.<br>
@@ -80,12 +87,11 @@ After get graph def of new inputs, reset default graph. New inputs tf.placeholde
         """
         Load placeholder's graph_def.
         """
+        target_def = []
         for node in tf.get_default_graph().as_graph_def().node:
-            if node.name == SPLIT_TARGET_SCORE_NAME:
-                score_def = node
-            if node.name == SPLIT_TARGET_EXPAND_NAME:
-                expand_def = node
-
+            for stn in SPLIT_TARGET_NAME:
+                if node.name == stn:
+                    target_def += [node]
         tf.reset_default_graph()
 ```
 
@@ -134,12 +140,12 @@ Load all inputs of all nodes and write inputs into edges[NODE_NAME].<br>
             seq = 0
             for node in graph_def.node:
                 n = self.node_name(node.name)
-                if n == SPLIT_TARGET_EXPAND_NAME or  n == SPLIT_TARGET_SCORE_NAME:
-                    print(node)
+                if n in SPLIT_TARGET_NAME:
+                     print(node)
                 name_to_node_map[n] = node
                 edges[n] = [self.node_name(x) for x in node.input]
-                if n == SPLIT_TARGET_EXPAND_NAME or  n == SPLIT_TARGET_SCORE_NAME:
-                    print(edges[n])
+                if n in SPLIT_TARGET_NAME:
+                     print(edges[n])
                 node_seq[n] = seq
                 seq += 1
 ```
@@ -196,7 +202,7 @@ Raise ERROR is also good.<br>
             """
             Alert if split target is not in the graph.
             """
-            dest_nodes = [SPLIT_TARGET_SCORE_NAME, SPLIT_TARGET_EXPAND_NAME]
+            dest_nodes = SPLIT_TARGET_NAME
             for d in dest_nodes:
                 assert d in name_to_node_map, "%s is not in graph" % d
 ```
@@ -242,8 +248,8 @@ Making CPU part is simple. It removes GPU part from loaded graph and add new inp
             nodes_to_remove_list = sorted(list(nodes_to_remove), key=lambda n: node_seq[n])
 
             remove = graph_pb2.GraphDef()
-            remove.node.extend([score_def])
-            remove.node.extend([expand_def])
+            for td in target_def:
+                remove.node.extend([td])
             for n in nodes_to_remove_list:
                 remove.node.extend([copy.deepcopy(name_to_node_map[n])])
 ```
@@ -274,10 +280,14 @@ If load_graph() returns expand_in and score_in, I can use it for secondary graph
 source code:[lib/detection_nms_v1.py](lib/detection_nms_v1.py)<br>
 ```python
         if SPLIT_MODEL:
-            score_out = graph.get_tensor_by_name('Postprocessor/convert_scores:0')
-            expand_out = graph.get_tensor_by_name('Postprocessor/ExpandDims_1:0')
-            score_in = graph.get_tensor_by_name('Postprocessor/convert_scores_1:0')
-            expand_in = graph.get_tensor_by_name('Postprocessor/ExpandDims_1_1:0')
+            SPLIT_TARGET_NAME = ['Postprocessor/convert_scores',
+                                 'Postprocessor/ExpandDims_1',
+            ]
+            split_out = []
+            split_in = []
+            for stn in SPLIT_TARGET_NAME:
+                split_out += [graph.get_tensor_by_name(stn+':0')]
+                split_in += [graph.get_tensor_by_name(stn+'_1:0')]
 ```
 
 <hr>
@@ -320,42 +330,20 @@ stack_1:<br>
 
 ### Write code and build graph.
 stack_1 seems to be an array of Float. That is, tf.placeholder with shape is None.<br>
-source code:[lib/load_graph_nms_v2.py](lib/load_graph_nms_v1.py)<br>
+source code:[lib/load_graph_nms_v2.py](lib/load_graph_nms_v2.py)<br>
+```python
+        """ SPLIT TARGET NAME """
+        SPLIT_TARGET_NAME = ['Postprocessor/Slice', # Tensor
+                             'Postprocessor/ExpandDims_1', # Tensor
+                             'Postprocessor/stack_1', # Float array
+        ]
+```
 ```python
         """ ADD CPU INPUT """
-        slice1_in = tf.placeholder(tf.float32, shape=(None, split_shape, num_classes), name=SPLIT_TARGET_SLICE1_NAME)
-        expand_in = tf.placeholder(tf.float32, shape=(None, split_shape, 1, 4), name=SPLIT_TARGET_EXPAND_NAME) # shape=output shape
-        stack_in = tf.placeholder(tf.float32, shape=(None), name=SPLIT_TARGET_TOSTACK_NAME) # array of float
-```
-```python
-        """
-        Load placeholder's graph_def.
-        """
-        for node in tf.get_default_graph().as_graph_def().node:
-            if node.name == SPLIT_TARGET_SLICE1_NAME:
-                slice1_def = node
-            if node.name == SPLIT_TARGET_EXPAND_NAME:
-                expand_def = node
-            if node.name == SPLIT_TARGET_STACK_NAME:
-                stack_def = node
-
-        tf.reset_default_graph()
-```
-```python
-            """
-            Alert if split target is not in the graph.
-            """
-            dest_nodes = [SPLIT_TARGET_SLICE1_NAME, SPLIT_TARGET_EXPAND_NAME, SPLIT_TARGET_STACK_NAME]
-            for d in dest_nodes:
-                assert d in name_to_node_map, "%s is not in graph" % d
-```
-```python
-            remove = graph_pb2.GraphDef()
-            remove.node.extend([slice1_def])
-            remove.node.extend([expand_def])
-            remove.node.extend([stack_def])
-            for n in nodes_to_remove_list:
-                remove.node.extend([copy.deepcopy(name_to_node_map[n])])
+        target_in = [tf.placeholder(tf.float32, shape=(None, split_shape, num_classes), name=SPLIT_TARGET_NAME[0]),
+                     tf.placeholder(tf.float32, shape=(None, split_shape, 1, 4), name=SPLIT_TARGET_NAME[1]), # shape=output shape
+                     tf.placeholder(tf.float32, shape=(None), name=SPLIT_TARGET_NAME[2]), # array of float
+        ]
 ```
 Build split graph.<br>
 ![](./document/ssd_mobilenet_v2_split.png)<br>
@@ -365,12 +353,15 @@ Operations.<br>
 source code:[lib/detection_nms_v2.py](lib/detection_nms_v2.py)<br>
 ```python
         if SPLIT_MODEL:
-            slice1_out = graph.get_tensor_by_name('Postprocessor/Slice:0')
-            expand_out = graph.get_tensor_by_name('Postprocessor/ExpandDims_1:0')
-            slice1_in = graph.get_tensor_by_name('Postprocessor/Slice_1:0')
-            expand_in = graph.get_tensor_by_name('Postprocessor/ExpandDims_1_1:0')
-            stack_out = graph.get_tensor_by_name('Postprocessor/stack_1:0')
-            stack_in = graph.get_tensor_by_name('Postprocessor/stack_1_1:0')
+            SPLIT_TARGET_NAME = ['Postprocessor/Slice',
+                                 'Postprocessor/ExpandDims_1',
+                                 'Postprocessor/stack_1'
+            ]
+            split_out = []
+            split_in = []
+            for stn in SPLIT_TARGET_NAME:
+                split_out += [graph.get_tensor_by_name(stn+':0')]
+                split_in += [graph.get_tensor_by_name(stn+'_1:0')]
 ```
 Of course, arguments and returns of sess.run() use this.<br>
 

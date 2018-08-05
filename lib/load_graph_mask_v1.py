@@ -107,9 +107,7 @@ class LoadFrozenGraph():
         split_shape = self.cfg['split_shape']
         num_classes = self.cfg['num_classes']
 
-        """
-        Split in Gather
-        """
+        """ SPLIT TARGET NAME """
         SPLIT_TARGET_NAME = ['Gather',
                              'BatchMultiClassNonMaxSuppression_1/map/TensorArrayStack_1/TensorArrayGatherV3',
                              'BatchMultiClassNonMaxSuppression_1/map/TensorArrayStack_4/TensorArrayGatherV3',
