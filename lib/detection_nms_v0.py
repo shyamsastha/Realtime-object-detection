@@ -235,8 +235,6 @@ class NMSV0():
                             cpu_feeds = {}
                             for i in range(len(result_slice_out)):
                                 cpu_feeds.update({split_in[i]:result_slice_out[i]})
-                            # add image_tensor
-                            cpu_feeds.update({image_tensor: image_expanded})
                             cpu_extras = extras
                             cpu_worker.put_sess_queue(cpu_opts, cpu_feeds, cpu_extras)
                         # else: cpu thread is busy. don't put new queue. let's check cpu result queue.
