@@ -371,7 +371,7 @@ class MASKV1():
                 """
                 EXIT WITHOUT GUI
                 """
-                if not VISUALIZE:
+                if not VISUALIZE and MAX_FRAMES > 0:
                     if proc_frame_counter >= MAX_FRAMES:
                         MPVariable.running.value = False
                         break

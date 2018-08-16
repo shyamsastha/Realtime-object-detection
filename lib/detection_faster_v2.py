@@ -1,7 +1,7 @@
 import numpy as np
 from tf_utils import visualization_utils_cv2 as vis_util
 from lib.session_worker import SessionWorker
-from lib.load_graph_nms_v2 import LoadFrozenGraph
+from lib.load_graph_faster_v2 import LoadFrozenGraph
 from lib.load_label_map import LoadLabelMap
 from lib.mpvariable import MPVariable
 from lib.mpvisualizeworker import MPVisualizeWorker, visualization
@@ -20,7 +20,7 @@ elif PY3:
     import queue as Queue
 
 
-class NMSV2():
+class FasterV2():
     def __init__(self):
         return
 
@@ -88,15 +88,47 @@ class NMSV2():
         num_detections = graph.get_tensor_by_name('num_detections:0')
 
         if SPLIT_MODEL:
-            SPLIT_TARGET_NAME = ['Postprocessor/Slice',
-                                 'Postprocessor/ExpandDims_1',
-                                 'Postprocessor/stack_1'
+            SPLIT_TARGET_NAME = ['SecondStagePostprocessor/ToFloat',
+                             'SecondStagePostprocessor/BatchMultiClassNonMaxSuppression/map/strided_slice',
+                             'BatchMultiClassNonMaxSuppression/map/TensorArrayStack_4/TensorArrayGatherV3',
+                             'Squeeze_2',
+                             'Squeeze_3',
+                             'SecondStagePostprocessor/Reshape_4',
             ]
+            ''' BAD SPLIT POINT
+            SPLIT_TARGET_OUT_NAME = ['ExpandDims_4',
+                             'Preprocessor/map/TensorArrayStack_1/TensorArrayGatherV3',
+                             'Shape',
+                             'ExpandDims_1',
+                             'Reshape_4',
+                             'Reshape_3',
+                             'FirstStageFeatureExtractor/InceptionV2/InceptionV2/Mixed_4e/concat',
+                                 ]
+            SPLIT_TARGET_IN_NAME = ['ExpandDims_4',
+                             'Preprocessor/map/TensorArrayStack_1/TensorArrayGatherV3',
+                             'Shape_6',
+                             'ExpandDims_1',
+                             'Reshape_4',
+                             'Reshape_3',
+                             'FirstStageFeatureExtractor/InceptionV2/InceptionV2/Mixed_4e/concat',
+                                 ]
+            
+            '''
+                
             split_out = []
             split_in = []
             for stn in SPLIT_TARGET_NAME:
                 split_out += [graph.get_tensor_by_name(stn+':0')]
                 split_in += [graph.get_tensor_by_name(stn+'_1:0')]
+            ''' BAD SPLIT POINT
+            for stn in SPLIT_TARGET_OUT_NAME:
+                split_out += [graph.get_tensor_by_name(stn+':0')]
+            for stn in SPLIT_TARGET_IN_NAME:
+                if stn == 'Shape_6':
+                    split_in += [graph.get_tensor_by_name(stn+':0')]
+                else:
+                    split_in += [graph.get_tensor_by_name(stn+'_1:0')]
+            '''
         """ """
 
         """ """ """ """ """ """ """ """ """ """ """
@@ -143,6 +175,7 @@ class NMSV2():
         """
         PUT DUMMY DATA INTO GPU WORKER
         """
+        '''
         gpu_feeds = {image_tensor:  [np.zeros((300, 300, 3))]}
         gpu_extras = {}
         gpu_worker.put_sess_queue(gpu_opts, gpu_feeds, gpu_extras)
@@ -150,9 +183,7 @@ class NMSV2():
             """
             PUT DUMMY DATA INTO CPU WORKER
             """
-            cpu_feeds = {split_in[0]: np.zeros((1, SPLIT_SHAPE, NUM_CLASSES)),
-                         split_in[1]: np.zeros((1, SPLIT_SHAPE, 1, 4)),
-                         split_in[2]: [[0., 0., 1., 1.]]}
+            cpu_feeds = {split_in[1]: np.zeros((1))}
             cpu_extras = {}
             cpu_worker.put_sess_queue(cpu_opts, cpu_feeds, cpu_extras)
         """
@@ -172,6 +203,7 @@ class NMSV2():
                 else:
                     break
         """ """
+        '''
 
         """ """ """ """ """ """ """ """ """ """ """
         START CAMERA

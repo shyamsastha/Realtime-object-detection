@@ -11,7 +11,7 @@ visualize: True             # True: Show result image. False: Without image show
 vis_worker: False           # True: Visualization run on process. (With visuzalize:True)
 max_vis_fps: 0              # >=1: Limit of show fps. 0: No limit - means try to spend full machine power for visualization. (With visualize:True.)
 vis_text: True              # Display fps on result image. (With visualize:True.)
-max_frames: 5000            # Quit when frames done. (With viualize:False)
+max_frames: 5000            # >=1: Quit when frames done. 0: no exit. (With visualize:False)
 width: 600                  # Camera width.
 height: 600                 # Camera height.
 fps_interval: 5             # FPS console out interval and FPS stream length.
@@ -25,7 +25,7 @@ label_path: 'models/labels/mscoco_label_map.pbtxt' # default: mscoco 90 classes
 split_shape: 1917           # 1917, 3000, 3309, 5118, 7326, 51150. ExpandDims_1's shape.
 num_classes: 90
 
-# model_type supports 'nms_v0', 'nms_v1', 'nms_v2', 'trt_v1', 'mask_v1'
+# model_type supports 'nms_v0', 'nms_v1', 'nms_v2', 'trt_v1', 'mask_v1', 'faster_v2'
 ########################################
 # model_type: 'nms_v0'
 # split_shape: 1917
@@ -100,6 +100,18 @@ model_path: 'models/ssd_mobilenet_v1_coco_2018_01_28/frozen_inference_graph.pb'
 #model_type: 'nms_v2'
 #model_path: 'models/ssd_mobilenet_v1_ppn_shared_box_predictor_300x300_coco14_sync_2018_07_03/frozen_inference_graph.pb'
 #split_shape: 3000
+
+
+########################################
+# model_type: 'faster_v2'
+########################################
+# KNOWN MODELS
+# faster_rcnn_inception_v2_coco_2018_01_28
+# faster_rcnn_resnet50_coco_2018_01_28
+# faster_rcnn_resnet101_coco_2018_01_28
+# faster_rcnn_inception_resnet_v2_atrous_coco_2018_01_28
+#model_type: 'faster_v2'
+#model_path: 'models/faster_rcnn_resnet50_coco_2018_01_28/frozen_inference_graph.pb'
 
 
 ########################################

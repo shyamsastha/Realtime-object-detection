@@ -23,6 +23,10 @@ wget http://download.tensorflow.org/models/object_detection/ssd_mobilenet_v1_coc
 | ssd_resnet50_v1_fpn_shared_box_predictor_640x640_coco14_sync_2018_07_03 | nms_v2 | 51150 |
 | ssd_mobilenet_v1_fpn_shared_box_predictor_640x640_coco14_sync_2018_07_03 | nms_v2 | 51150 |
 | ssd_mobilenet_v1_ppn_shared_box_predictor_300x300_coco14_sync_2018_07_03 | nms_v2 | 3000 |
+| faster_rcnn_inception_v2_coco_2018_01_28 | faster_v2 | |
+| faster_rcnn_resnet50_coco_2018_01_28 | faster_v2 | |
+| faster_rcnn_resnet101_coco_2018_01_28 | faster_v2 | |
+| faster_rcnn_inception_resnet_v2_atrous_coco_2018_01_28 | faster_v2 | |
 | mask_rcnn_inception_resnet_v2_atrous_coco_2018_01_28 | mask_v1 | |
 | mask_rcnn_inception_v2_coco_2018_01_28 | mask_v1 | |
 | mask_rcnn_resnet101_atrous_coco_2018_01_28 | mask_v1 | |
@@ -31,6 +35,9 @@ wget http://download.tensorflow.org/models/object_detection/ssd_mobilenet_v1_coc
 * TensorRT -> `model_type: 'trt_v1'`<br>
 Requirements: [https://github.com/NVIDIA-Jetson/tf_trt_models](https://github.com/NVIDIA-Jetson/tf_trt_models)<br>
 
+* Faster R-CNN: PC only<br>
+faster_rcnn_nas_coco_2018_01_28 occurred Out Of Memory on my PC.<br>
+Other Faster R-CNN has not checked yet.<br>
 * Mask R-CNN: PC only<br>
 split_model can be True, but it's slow yet.<br>
 
@@ -179,6 +186,9 @@ VFrames: visualization frames in fps_interval. <br>
 VDrops: When multi-processing visualization is bottleneck, drops. <br>
 
 ## Updates:
+- support Faster R-CNN models.
+- Add `max_frame: 0` for no exit with `visualize: False`.
+
 - support ssd_mobilenet_v1 11 Jun, 2017 model.
 - Add from movie.
 - Add save_to_movie.

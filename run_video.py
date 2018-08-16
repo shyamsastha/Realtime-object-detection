@@ -16,6 +16,7 @@ About repogitory: Forked from GustavZ's github.
 https://github.com/GustavZ/realtime_object_detection
 
 Updates:
+- Support Faster R-CNN
 - support ssd_mobilenet_v1 11 Jun, 2017 model.
 - Add save_to_movie.
 - Support MASK R-CNN
@@ -124,6 +125,10 @@ def main():
         elif model_type == 'mask_v1':
             from lib.detection_mask_v1 import MASKV1
             detection = MASKV1()
+            detection.start(cfg)
+        elif model_type == 'faster_v2':
+            from lib.detection_faster_v2 import FasterV2
+            detection = FasterV2()
             detection.start(cfg)
         else:
             raise IOError(("Unknown model_type."))
