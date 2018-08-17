@@ -80,15 +80,7 @@ class LoadFrozenGraph():
             graph_def.ParseFromString(serialized_graph)
             # force CPU device placement for NMS ops
             for node in graph_def.node:
-                if 'BatchMultiClassNonMaxSuppression' in node.name:
-                    node.device = '/device:CPU:0'
-                elif 'detection_scores' in node.name:
-                    node.device = '/device:CPU:0'
-                elif 'detection_boxes' in node.name:
-                    node.device = '/device:CPU:0'
-                elif 'add_1' in node.name:
-                    node.device = '/device:CPU:0'
-                elif 'detection_classes' in node.name:
+                if 'BatchMultiClassNonMaxSuppression_1' in node.name:
                     node.device = '/device:CPU:0'
                 else:
                     node.device = '/device:GPU:0'
