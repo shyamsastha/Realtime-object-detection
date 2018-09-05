@@ -204,8 +204,13 @@ class LoadFrozenGraph():
             """
             with tf.device('/gpu:0'):
                 tf.import_graph_def(keep, name='')
-            with tf.device('/cpu:0'):
-                tf.import_graph_def(remove, name='')
+
+            for node in remove.node:
+                if 'BatchMultiClassNonMaxSuppression_1' in node.name:
+                    node.device = '/device:CPU:0'
+                else:
+                    node.device = '/device:GPU:0'
+            tf.import_graph_def(remove, name='')
 
             """
 Traceback (most recent call last):

@@ -50,6 +50,7 @@ See also:<br>
 - edit `config.yml` for your environment. (Ex. video_input: 0 # for PC)
 - run `python run_stream.py` realtime object detection from webcam (Multi-Threading)
 - or run `python run_video.py` realtime object detection from movie file (Multi-Threading)
+- or run `python run_image.py` realtime object detection from image file (Multi-Threading)
 - wait few minuts.
 - Multi-Threading is better performance than Multi-Processing. Multi-Processing bottleneck is interprocess communication.
 <br />
@@ -61,7 +62,18 @@ pip install --upgrade pyyaml
 Also, OpenCV >= 3.1 and Tensorflow >= 1.4 (1.6 is good)
 
 ## config.yml
+#### Image
+with run_image.py  
+```
+image_input: 'images'       # input image dir
+```
+#### Movie
+with run_video.py  
+```
+movie_input: 'input.mp4'    # mp4 or avi. Movie file.
+```
 #### Camera
+with run_stream.py  
 This is OpenCV argument.
 * USB Webcam on PC
 ```
@@ -76,11 +88,16 @@ video_input: 1
 video_input: "nvcamerasrc ! video/x-raw(memory:NVMM), width=(int)1280, height=(int)720,format=(string)I420, framerate=(fraction)30/1 ! nvvidconv flip-method=0 ! video/x-raw, format=(string)BGRx ! videoconvert ! video/x-raw, format=(string)BGR ! appsink"
 ```
 
-### Save to movie
-Save detection frame to movie file. (./movie/output_unixtime.avi)  
-Requires a lot of disk space.  
+### Save to file
+* Movie (run_stream.py or run_video.py)  
+Save detection frame to movie file. (./output_movie/output_unixtime.avi)  
+Requires a lot of disk space.
+* Image (run_image.py)  
+Save detection image to image file. (./output_image/PATH_TO_FILE/filename.jpg)  
+Normally, this output image file is the same width x height and format as input images.  
+But if run with MASK R-CNN, output file size is resized by `width` and `height`.  
 ```
-save_to_movie: True
+save_to_file: True
 ```
 
 ####  Without Visualization
@@ -186,6 +203,9 @@ VFrames: visualization frames in fps_interval. <br>
 VDrops: When multi-processing visualization is bottleneck, drops. <br>
 
 ## Updates:
+- Add image input.
+- Rename config.yml parameter name from save_to_movie to save_to_file.
+
 - support Faster R-CNN models.
 - Add `max_frame: 0` for no exit with `visualize: False`.
 

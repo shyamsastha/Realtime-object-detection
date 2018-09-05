@@ -16,6 +16,9 @@ About repogitory: Forked from GustavZ's github.
 https://github.com/GustavZ/realtime_object_detection
 
 Updates:
+- Add image input.
+- Rename config.yml parameter name from save_to_movie to save_to_file.
+
 - Support Faster R-CNN
 - support ssd_mobilenet_v1 11 Jun, 2017 model.
 - Add save_to_movie.
@@ -52,7 +55,7 @@ def load_config():
             cfg = yaml.load(ymlfile)
     else:
         raise FileNotFoundError(("File not found: config.yml"))
-    cfg.update({'from_camera':True})
+    cfg.update({'src_from': 'camera'})
     return cfg
 
 def log_format(debug_mode):

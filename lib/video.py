@@ -6,11 +6,12 @@ import time
 import os
 
 class VideoReader:
-    vid = None
-    out = None
-    running = False
 
     def __init__(self):
+        self.vid = None
+        self.out = None
+        self.running = False
+        self.detection_counter = {}
         return
 
     def __del__(self):
@@ -26,12 +27,14 @@ class VideoReader:
             os.makedirs(path)
         return
 
-    def start(self, src, width, height, output_prefix='output', save_to_movie=False):
+    def start(self, src, width, height, output_dir='output_movie', output_prefix='output', save_to_file=False):
         """
         output_1532580366.27.avi
         output_file[:-4] # remove .avi from filename
         """
-        output_file = 'movie/' + output_prefix + '_' + str(time.time()) + '.avi'
+        output_file = output_dir + '/' + output_prefix + '_' + str(time.time()) + '.avi'
+        self.OUTPUT_DIR = output_dir
+
         # initialize the video camera vid and read the first frame
         self.vid = cv2.VideoCapture(src)
         if not self.vid.isOpened():
@@ -51,9 +54,9 @@ class VideoReader:
         print("Start video stream with shape: {},{}".format(self.real_width, self.real_height))
         self.running = True
 
-        """ save to movie """
-        if save_to_movie:
-            self.mkdir('movie')
+        """ save to file """
+        if save_to_file:
+            self.mkdir(output_dir)
             fps = self.vid.get(cv2.CAP_PROP_FPS)
             fourcc = cv2.VideoWriter_fourcc('M','J','P','G')
             self.out = cv2.VideoWriter(output_file, int(fourcc), fps, (int(self.real_width), int(self.real_height)))
@@ -81,3 +84,25 @@ class VideoReader:
             self.vid.release()
         if self.out is not None:
             self.out.release()
+
+    def save_detection_image(self, int_label, cv_bgr, filepath):
+        self.mkdir(self.OUTPUT_DIR+"/"+str(int_label))
+
+        dir_path, filename = os.path.split(filepath)
+        if not filename in self.detection_counter:
+            self.detection_counter.update({filename: 0})
+        self.detection_counter[filename] += 1
+        # remove .jpg/.jpeg/.png and get filename
+        if filename.endswith(".jpeg"):
+            filehead = filename[:-5]
+            filetype = ".jpeg"
+        elif filename.endswith(".jpg"):
+            filehead = filename[:-4]
+            filetype = ".jpg"
+        elif filename.endswith(".png"):
+            filehead = filename[:-4]
+            filetype = ".png"
+
+        # save to file
+        cv2.imwrite(self.OUTPUT_DIR+"/"+str(int_label)+"/"+filehead+"_"+str(self.detection_counter[filename])+filetype, cv_bgr)
+        return

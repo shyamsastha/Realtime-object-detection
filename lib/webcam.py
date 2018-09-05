@@ -29,12 +29,12 @@ class WebcamVideoStream:
             os.makedirs(path)
         return
 
-    def start(self, src, width, height, output_prefix='output', save_to_movie=False):
+    def start(self, src, width, height, output_dir='output_movie', output_prefix='output', save_to_file=False):
         """
         output_1532580366.27.avi
         output_file[:-4] # remove .avi from filename
         """
-        output_file = 'movie/' + output_prefix + '_' + str(time.time()) + '.avi'
+        output_file = output_dir + '/' + output_prefix + '_' + str(time.time()) + '.avi'
 
         # initialize the video camera stream and read the first frame
         self.vid = cv2.VideoCapture(src)
@@ -55,9 +55,9 @@ class WebcamVideoStream:
         print("Start video stream with shape: {},{}".format(self.real_width, self.real_height))
         self.running = True
 
-        """ save to movie """
-        if save_to_movie:
-            self.mkdir('movie')
+        """ save to file """
+        if save_to_file:
+            self.mkdir(output_dir)
             fps = self.vid.get(cv2.CAP_PROP_FPS)
             fourcc = cv2.VideoWriter_fourcc('M','J','P','G')
             self.out = cv2.VideoWriter(output_file, int(fourcc), fps, (int(self.real_width), int(self.real_height)))

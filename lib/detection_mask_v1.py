@@ -12,6 +12,7 @@ from lib.color_map import STANDARD_COLORS_ARRAY
 import time
 import cv2
 import tensorflow as tf
+import os
 
 import sys
 PY2 = sys.version_info[0] == 2
@@ -31,7 +32,7 @@ class MASKV1():
         GET CONFIG
         """ """ """ """ """ """ """ """ """ """ """
         FORCE_GPU_COMPATIBLE = cfg['force_gpu_compatible']
-        SAVE_TO_MOVIE        = cfg['save_to_movie']
+        SAVE_TO_FILE         = cfg['save_to_file']
         VISUALIZE            = cfg['visualize']
         VIS_WORKER           = cfg['vis_worker']
         VIS_TEXT             = cfg['vis_text']
@@ -48,11 +49,19 @@ class MASKV1():
         DEBUG_MODE           = cfg['debug_mode']
         LABEL_PATH           = cfg['label_path']
         NUM_CLASSES          = cfg['num_classes']
-        FROM_CAMERA          = cfg['from_camera']
-        if FROM_CAMERA:
+        SRC_FROM             = cfg['src_from']
+        CAMERA = 0
+        MOVIE  = 1
+        IMAGE  = 2
+        if SRC_FROM == 'camera':
+            SRC_FROM = CAMERA
             VIDEO_INPUT = cfg['camera_input']
-        else:
+        elif SRC_FROM == 'movie':
+            SRC_FROM = MOVIE
             VIDEO_INPUT = cfg['movie_input']
+        elif SRC_FROM == 'image':
+            SRC_FROM = IMAGE
+            VIDEO_INPUT = cfg['image_input']
         """ """
 
         """ """ """ """ """ """ """ """ """ """ """
@@ -94,25 +103,32 @@ class MASKV1():
         """ """ """ """ """ """ """ """ """ """ """
         START CAMERA
         """ """ """ """ """ """ """ """ """ """ """
-        if FROM_CAMERA:
+        if SRC_FROM == CAMERA:
             from lib.webcam import WebcamVideoStream as VideoReader
-        else:
+        elif SRC_FROM == MOVIE:
             from lib.video import VideoReader
+        elif SRC_FROM == IMAGE:
+            from lib.image import ImageReader as VideoReader
         video_reader = VideoReader()
-        video_reader.start(VIDEO_INPUT, WIDTH, HEIGHT, save_to_movie=SAVE_TO_MOVIE)
-        frame_cols, frame_rows = video_reader.getSize()
-        """ """
 
-
-        """ """ """ """ """ """ """ """ """ """ """
-        FONT
-        """ """ """ """ """ """ """ """ """ """ """
-        """ STATISTICS FONT """
+        if SRC_FROM == IMAGE:
+            video_reader.start(VIDEO_INPUT, save_to_file=SAVE_TO_FILE)
+            frame_cols, frame_rows = HEIGHT, WIDTH
+        else: # CAMERA, MOVIE
+            video_reader.start(VIDEO_INPUT, WIDTH, HEIGHT, save_to_file=SAVE_TO_FILE)
+            frame_cols, frame_rows = video_reader.getSize()
+            """ STATISTICS FONT """
+            fontScale = frame_rows/1000.0
+            if fontScale < 0.4:
+                fontScale = 0.4
+            fontThickness = 1 + int(fontScale)
         fontFace = cv2.FONT_HERSHEY_SIMPLEX
-        fontScale = frame_rows/1000.0
-        if fontScale < 0.4:
-            fontScale = 0.4
-        fontThickness = 1 + int(fontScale)
+        if SRC_FROM == MOVIE:
+            dir_path, filename = os.path.split(VIDEO_INPUT)
+            filepath_prefix = filename
+        elif SRC_FROM == CAMERA:
+            filepath_prefix = 'frame'
+        """ """
 
 
         """ """ """ """ """ """ """ """ """ """ """
@@ -178,13 +194,6 @@ class MASKV1():
         proc_frame_counter = 0
         vis_proc_time = 0
 
-        """ """ """ """ """ """ """ """ """ """ """
-        LOAD LABEL MAP
-        """ """ """ """ """ """ """ """ """ """ """
-        llm = LoadLabelMap()
-        category_index = llm.load_label_map(cfg)
-        """ """
-
 
         """ """ """ """ """ """ """ """ """ """ """
         WAIT UNTIL THE FIRST DUMMY IMAGE DONE
@@ -234,26 +243,40 @@ class MASKV1():
         print('Starting Detection')
         sleep_interval = 0.005
         top_in_time = None
+        frame_in_processing_counter = 0
         try:
-            while video_reader.running and MPVariable.running.value:
+            if not video_reader.running:
+                raise IOError(("Input src error."))
+            while MPVariable.running.value:
                 if top_in_time is None:
                     top_in_time = time.time()
                 """
                 SPRIT/NON-SPLIT MODEL CAMERA TO WORKER
                 """
-                if gpu_worker.is_sess_empty(): # must need for speed
-                    cap_in_time = time.time()
-                    frame = video_reader.read()
-                    if frame is None:
-                        MPVariable.running.value = False
-                        break
-                    image_expanded = np.expand_dims(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB), axis=0) # np.expand_dims is faster than []
-                    #image_expanded = np.expand_dims(frame, axis=0) # BGR image for input. Of couse, bad accuracy in RGB trained model, but speed up.
-                    cap_out_time = time.time()
-                    # put new queue
-                    gpu_feeds = {image_tensor: image_expanded}
-                    gpu_extras = {'image':frame, 'top_in_time':top_in_time, 'cap_in_time':cap_in_time, 'cap_out_time':cap_out_time} # always image draw.
-                    gpu_worker.put_sess_queue(gpu_opts, gpu_feeds, gpu_extras)
+                if video_reader.running:
+                    if gpu_worker.is_sess_empty(): # must need for speed
+                        cap_in_time = time.time()
+                        if SRC_FROM == IMAGE:
+                            frame, filepath = video_reader.read()
+                            if frame is not None:
+                                frame_in_processing_counter += 1
+                                frame = cv2.resize(frame, (frame_cols, frame_rows))
+                        else:
+                            frame = video_reader.read()
+                            if frame is not None:
+                                filepath = filepath_prefix+'_'+str(proc_frame_counter)+'.png'
+                                frame_in_processing_counter += 1
+                        if frame is not None:
+                            image_expanded = np.expand_dims(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB), axis=0) # np.expand_dims is faster than []
+                            #image_expanded = np.expand_dims(frame, axis=0) # BGR image for input. Of couse, bad accuracy in RGB trained model, but speed up.
+                            cap_out_time = time.time()
+                            # put new queue
+                            gpu_feeds = {image_tensor: image_expanded}
+                            gpu_extras = {'image':frame, 'top_in_time':top_in_time, 'cap_in_time':cap_in_time, 'cap_out_time':cap_out_time, 'filepath': filepath} # always image draw.
+                            gpu_worker.put_sess_queue(gpu_opts, gpu_feeds, gpu_extras)
+                elif frame_in_processing_counter <= 0:
+                    MPVariable.running.value = False
+                    break
 
                 g = gpu_worker.get_result_queue()
                 if SPLIT_MODEL:
@@ -287,6 +310,7 @@ class MASKV1():
                     time.sleep(sleep_interval)
                     continue
 
+                frame_in_processing_counter -= 1
                 boxes, scores, classes, num, masks, extras = q['results'][0], q['results'][1], q['results'][2], q['results'][3], q['results'][4], q['extras']
                 det_out_time = time.time()
 
@@ -295,6 +319,16 @@ class MASKV1():
                 """
                 vis_in_time = time.time()
                 image = extras['image']
+                if SRC_FROM == IMAGE:
+                    filepath = extras['filepath']
+                    frame_rows, frame_cols = image.shape[:2]
+                    """ STATISTICS FONT """
+                    fontScale = frame_rows/1000.0
+                    if fontScale < 0.4:
+                        fontScale = 0.4
+                    fontThickness = 1 + int(fontScale)
+                else:
+                    filepath = extras['filepath']
                 image = visualization(category_index, image, boxes, scores, classes, DEBUG_MODE, VIS_TEXT, FPS_INTERVAL,
                                       fontFace=fontFace, fontScale=fontScale, fontThickness=fontThickness, masks=masks)
 
@@ -336,9 +370,12 @@ class MASKV1():
                     PROCESSING TIME
                     """
                     vis_proc_time = vis_out_time - vis_in_time
-                            
-                if SAVE_TO_MOVIE:
-                    video_reader.save(image)
+
+                if SAVE_TO_FILE:
+                    if SRC_FROM == IMAGE:
+                        video_reader.save(image, filepath)
+                    else:
+                        video_reader.save(image)
 
                 proc_frame_counter += 1
                 if proc_frame_counter > 100000:
@@ -407,4 +444,4 @@ class MASKV1():
             """ """
 
         return
-    
+
