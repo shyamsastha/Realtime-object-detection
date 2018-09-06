@@ -258,7 +258,9 @@ class NMSV1():
                                 cpu_feeds.update({split_in[i]:result_slice_out[i]})
                             cpu_extras = extras
                             cpu_worker.put_sess_queue(cpu_opts, cpu_feeds, cpu_extras)
-                        # else: cpu thread is busy. don't put new queue. let's check cpu result queue.
+                        else:
+                            # else: cpu thread is busy. don't put new queue. let's check cpu result queue.
+                            frame_in_processing_counter -= 1
                     # check cpu thread.
                     q = cpu_worker.get_result_queue()
                 else:
