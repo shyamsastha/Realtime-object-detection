@@ -1,4 +1,4 @@
-# Tensorflow realtime_object_detection on Jetson TX2/TX1/PC
+# Tensorflow realtime_object_detection on Jetson Xavier/TX2/TX1, PC
 
 ## About this repository
 forked from GustavZ/realtime_object_detection: [https://github.com/GustavZ/realtime_object_detection](https://github.com/GustavZ/realtime_object_detection)  
@@ -35,10 +35,10 @@ wget http://download.tensorflow.org/models/object_detection/ssd_mobilenet_v1_coc
 * TensorRT -> `model_type: 'trt_v1'`<br>
 Requirements: [https://github.com/NVIDIA-Jetson/tf_trt_models](https://github.com/NVIDIA-Jetson/tf_trt_models)<br>
 
-* Faster R-CNN: PC only<br>
+* Faster R-CNN: PC/Xavier only<br>
 faster_rcnn_nas_coco_2018_01_28 occurred Out Of Memory on my PC.<br>
 Other Faster R-CNN has not checked yet.<br>
-* Mask R-CNN: PC only<br>
+* Mask R-CNN: PC/Xavier only<br>
 split_model can be True, but it's slow yet.<br>
 
 See also:<br>
@@ -48,9 +48,9 @@ See also:<br>
 ## Getting Started:
 - login Jetson TX2. Desktop login or ssh remote login. `ssh -C -Y ubuntu@xxx.xxx.xxx.xxx`
 - edit `config.yml` for your environment. (Ex. video_input: 0 # for PC)
-- run `python run_stream.py` realtime object detection from webcam (Multi-Threading)
-- or run `python run_video.py` realtime object detection from movie file (Multi-Threading)
-- or run `python run_image.py` realtime object detection from image file (Multi-Threading)
+- run `python run_stream.py` realtime object detection from webcam
+- or run `python run_video.py` realtime object detection from movie file
+- or run `python run_image.py` realtime object detection from image file
 - wait few minuts.
 - Multi-Threading is better performance than Multi-Processing. Multi-Processing bottleneck is interprocess communication.
 <br />
@@ -168,7 +168,7 @@ ExpandDims_1's shape. Ex:<br>
 See also: [Learn Split Model](About_Split-Model.md)
 
 * TensorRT
-split/non-split both support. Need Tensorflow with TensorRT support. (r1.9 has bug. I use r1.8 for pc)
+split/non-split both support. Need Tensorflow with TensorRT support. (r1.9 has bug. I use r1.8/r1.10.1 for pc)
 ```
 model_type: 'trt_v1'
 precision_model: 'FP32'     # 'FP32', 'FP16', 'INT8'
@@ -189,7 +189,7 @@ Seconds: fps_interval running time. <br>
 <hr>
 
 1FRAME<br>
-total: 1 frame's processing time. 0.1 means delay and 10 fps if it is single-threading. In multi-threading, this value means delay. <br>
+total: 1 frame's processing time. 0.1 means delay and 10 fps if it is single-threading(`split_model: False`). In multi-threading(`split_model: True`), this value means delay. <br>
 cap: time of capture camera image and transform for model input. <br>
 gpu: sess.run() time of gpu part. <br>
 cpu: sess.run() time of cpu part. <br>
@@ -252,6 +252,10 @@ VDrops: When multi-processing visualization is bottleneck, drops. <br>
       * nvidia/cuda
       * Pyton 2.7.12/OpenCV 3.4.1/Tensorflow 1.6.1
       * Pyton 3.6.5/OpenCV 3.4.1/Tensorflow 1.6.1
+* Jetson Xavier
+  * JetPack 4.0 Developer Preview
+  * Python 2.7/OpenCV 3.3.1/Tensorflow 1.6.1
+  * Python 2.7/OpenCV 3.3.1/Tensorflow 1.10.1 (slow)
 * Jetson TX2
   * JetPack 3.2/3.2.1
     * Python 3.6
@@ -300,38 +304,46 @@ sudo nvpmodel -q --verbose
 ```
 
 ## Current Max Performance of ssd_mobilenet_v1_coco_2018_01_28
-| FPS | Machine | Size | Multi | Visualize | Mode | CPU | Watt | Ampere | Volt-Ampere | Model | classes |
+| FPS | Machine | Size | Split Model | Visualize | Mode | CPU | Watt | Ampere | Volt-Ampere | Model | classes |
 |:--|:--|:--|:--|:--|:--|:--|:--|:--|:--|:--|:--|
-| 227 | PC | 160x120 | Multi-Threading | False | - | 27-33% | 182W | 1.82A | 183VA | frozen_inference_graph.pb | 90 |
-| 223 | PC | 160x120 | Multi-Threading | Worker 30 FPS Limit | - | 28-36% | 178W | 1.77A | 180VA | frozen_inference_graph.pb | 90 |
-| 213 | PC | 544x288 | Multi-Threading | False | - | 49-52% | 178W | 1.79A | 180VA | frozen_inference_graph.pb | 90 |
-| 212 | PC | 160x120 | Multi-Threading | True | - | 30-34% | 179W | 1.82A | 183VA | frozen_inference_graph.pb | 90 |
-| 207 | PC | 544x288 | Multi-Threading | Worker 30 FPS Limit | - | 48-53% | 178W | 1.76A | 178VA | frozen_inference_graph.pb | 90 |
-| 190 | PC | 544x288 | Multi-Threading | True | - | 52-58% | 176W | 1.80A | 177VA | frozen_inference_graph.pb | 90 |
-| 174 | PC | 1280x720 | Multi-Threading | False | - | 42-49% | 172W | 1.72A | 174VA | frozen_inference_graph.pb | 90 |
-| 163 | PC | 1280x720 | Multi-Threading | Worker 30 FPS Limit | - | 47-53% | 170W | 1.69A | 170VA | frozen_inference_graph.pb | 90 |
-| 153 | PC | 1280x720 | Multi-Threading | Worker 60 FPS Limit | - | 51-56% | 174W | 1.73A | 173VA | frozen_inference_graph.pb | 90 |
-| 146 | PC | 1280x720 | Multi-Threading | Worker 67 FPS | - | 57-61% | 173W | 1.70A | 174VA | frozen_inference_graph.pb | 90 |
-| 77 | PC | 1280x720 | Multi-Threading | True | - | 29-35% | 142W | 1.43A | 144VA | frozen_inference_graph.pb | 90 |
-| 43 | TX2 | 160x120 | Multi-Threading | False | Max-N | 65-76% | 18.6W | 0.28A | 29.9VA | frozen_inference_graph.pb | 90 |
-| 40 | TX2 | 544x288 | Multi-Threading | False | Max-N | 60-77% | 18.0W | 0.28A | 29.8VA | frozen_inference_graph.pb | 90 |
-| 38 | TX2 | 1280x720 | Multi-Threading | False | Max-N | 62-75% | 17.7W | 0.27A | 29.2VA | frozen_inference_graph.pb | 90 |
-| 37 | TX2 | 160x120 | Multi-Threading | True | Max-N | 5-68% | 17.7W | 0.27A | 28.0VA | frozen_inference_graph.pb | 90 |
-| 37 | TX2 | 160x120 | Multi-Threading | False | Max-P ARM | 80-86% | 13.8W | 0.22A | 23.0VA | frozen_inference_graph.pb | 90 |
-| 37 | TX2 | 160x120 | Multi-Threading | True | Max-P ARM | 77-80% | 14.0W | 0.22A | 23.1VA | frozen_inference_graph.pb | 90 |
-| 35 | TX2 | 544x288 | Multi-Threading | True | Max-N | 20-71% | 17.0W | 0.27A | 27.7VA | frozen_inference_graph.pb | 90 |
-| 35 | TX2 | 544x288 | Multi-Threading | False | Max-P ARM | 82-86% | 13.6W | 0.22A | 22.8VA | frozen_inference_graph.pb | 90 |
-| 34 | TX2 | 1280x720 | Multi-Threading | False | Max-P ARM | 82-87% | 13.6W | 0.21A | 22.2VA | frozen_inference_graph.pb | 90 |
-| 32 | TX2 | 544x288 | Multi-Threading | True | Max-P ARM | 79-85% | 13.4W | 0.21A | 22.3VA | frozen_inference_graph.pb | 90 |
-| 31 | TX2 | 1280x720 | Multi-Threading | True | Max-N | 46-75% | 16.9W | 0.26A | 28.1VA | frozen_inference_graph.pb | 90 |
-| 27 | TX1 | 160x120 | Multi-Threading | False | - | 71-80% | 17.3W | 0.27A | 28.2VA | frozen_inference_graph.pb | 90 |
-| 26 | TX2 | 1280x720 | Multi-Threading | True | Max-P ARM | 78-86% | 12.6W | 0.20A | 21.2VA | frozen_inference_graph.pb | 90 |
-| 26 | TX1 | 544x288 | Multi-Threading | False | - | 74-82% | 17.2W | 0.27A | 29.0VA | frozen_inference_graph.pb | 90 |
-| 26 | TX1 | 160x120 | Multi-Threading | True | - | 69-81% | 17.1W | 0.27A | 28.7VA | frozen_inference_graph.pb | 90 |
-| 24 | TX1 | 1280x720 | Multi-Threading | False | - | 73-80% | 17.6W | 0.27A | 29.3VA6 | frozen_inference_graph.pb | 90 |
-| 23 | TX1 | 544x288 | Multi-Threading | True | - | 77-82% | 16.7W | 0.27A | 28.2VA | frozen_inference_graph.pb | 90 |
-| 19 | TX1 | 1280x720 | Multi-Threading | True | - | 78-86% | 15.8W | 0.26A | 26.7VA | frozen_inference_graph.pb | 90 |
+| 227 | PC | 160x120 | True | False | - | 27-33% | 182W | 1.82A | 183VA | frozen_inference_graph.pb | 90 |
+| 223 | PC | 160x120 | True | True, Worker 30 FPS Limit | - | 28-36% | 178W | 1.77A | 180VA | frozen_inference_graph.pb | 90 |
+| 213 | PC | 544x288 | True | False | - | 49-52% | 178W | 1.79A | 180VA | frozen_inference_graph.pb | 90 |
+| 212 | PC | 160x120 | True | True | - | 30-34% | 179W | 1.82A | 183VA | frozen_inference_graph.pb | 90 |
+| 207 | PC | 544x288 | True | True, Worker 30 FPS Limit | - | 48-53% | 178W | 1.76A | 178VA | frozen_inference_graph.pb | 90 |
+| 190 | PC | 544x288 | True | True | - | 52-58% | 176W | 1.80A | 177VA | frozen_inference_graph.pb | 90 |
+| 174 | PC | 1280x720 | True | False | - | 42-49% | 172W | 1.72A | 174VA | frozen_inference_graph.pb | 90 |
+| 163 | PC | 1280x720 | True | True, Worker 30 FPS Limit | - | 47-53% | 170W | 1.69A | 170VA | frozen_inference_graph.pb | 90 |
+| 153 | PC | 1280x720 | True | True, Worker 60 FPS Limit | - | 51-56% | 174W | 1.73A | 173VA | frozen_inference_graph.pb | 90 |
+| 146 | PC | 1280x720 | True | True, Worker No Limit (VFPS:67) | - | 57-61% | 173W | 1.70A | 174VA | frozen_inference_graph.pb | 90 |
+| 77 | PC | 1280x720 | True | True | - | 29-35% | 142W | 1.43A | 144VA | frozen_inference_graph.pb | 90 |
+| 60 | Xavier | 160x120 | True | False | Max-N | 34-42% | 31.7W | 0.53A | 54.5VA | frozen_inference_graph.pb | 90 |
+| 59 | Xavier | 544x288 | True | False | Max-N | 39-45% | 31.8W | 0.53A | 54.4VA | frozen_inference_graph.pb | 90 |
+| 58 | Xavier | 1280x720 | True | False | Max-N | 38-48% | 31.6W | 0.53A | 55.1VA | frozen_inference_graph.pb | 90 |
+| 54 | Xavier | 160x120 | True | True | Max-N | 39-44% | 31.4W | 0.52A | 54.4VA | frozen_inference_graph.pb | 90 |
+| 52 | Xavier | 544x288 | True | True | Max-N | 39-50% | 31.4W | 0.55A | 56.0VA | frozen_inference_graph.pb | 90 |
+| 48 | Xavier | 1280x720 | True | True | Max-N | 44-76% | 32.5W | 0.54A | 55.6VA | frozen_inference_graph.pb | 90 |
+| 43 | TX2 | 160x120 | True | False | Max-N | 65-76% | 18.6W | 0.28A | 29.9VA | frozen_inference_graph.pb | 90 |
+| 40 | TX2 | 544x288 | True | False | Max-N | 60-77% | 18.0W | 0.28A | 29.8VA | frozen_inference_graph.pb | 90 |
+| 38 | TX2 | 1280x720 | True | False | Max-N | 62-75% | 17.7W | 0.27A | 29.2VA | frozen_inference_graph.pb | 90 |
+| 37 | TX2 | 160x120 | True | True | Max-N | 5-68% | 17.7W | 0.27A | 28.0VA | frozen_inference_graph.pb | 90 |
+| 37 | TX2 | 160x120 | True | False | Max-P ARM | 80-86% | 13.8W | 0.22A | 23.0VA | frozen_inference_graph.pb | 90 |
+| 37 | TX2 | 160x120 | True | True | Max-P ARM | 77-80% | 14.0W | 0.22A | 23.1VA | frozen_inference_graph.pb | 90 |
+| 35 | TX2 | 544x288 | True | True | Max-N | 20-71% | 17.0W | 0.27A | 27.7VA | frozen_inference_graph.pb | 90 |
+| 35 | TX2 | 544x288 | True | False | Max-P ARM | 82-86% | 13.6W | 0.22A | 22.8VA | frozen_inference_graph.pb | 90 |
+| 34 | TX2 | 1280x720 | True | False | Max-P ARM | 82-87% | 13.6W | 0.21A | 22.2VA | frozen_inference_graph.pb | 90 |
+| 32 | TX2 | 544x288 | True | True | Max-P ARM | 79-85% | 13.4W | 0.21A | 22.3VA | frozen_inference_graph.pb | 90 |
+| 31 | TX2 | 1280x720 | True | True | Max-N | 46-75% | 16.9W | 0.26A | 28.1VA | frozen_inference_graph.pb | 90 |
+| 27 | TX1 | 160x120 | True | False | - | 71-80% | 17.3W | 0.27A | 28.2VA | frozen_inference_graph.pb | 90 |
+| 26 | TX2 | 1280x720 | True | True | Max-P ARM | 78-86% | 12.6W | 0.20A | 21.2VA | frozen_inference_graph.pb | 90 |
+| 26 | TX1 | 544x288 | True | False | - | 74-82% | 17.2W | 0.27A | 29.0VA | frozen_inference_graph.pb | 90 |
+| 26 | TX1 | 160x120 | True | True | - | 69-81% | 17.1W | 0.27A | 28.7VA | frozen_inference_graph.pb | 90 |
+| 24 | TX1 | 1280x720 | True | False | - | 73-80% | 17.6W | 0.27A | 29.3VA6 | frozen_inference_graph.pb | 90 |
+| 23 | TX1 | 544x288 | True | True | - | 77-82% | 16.7W | 0.27A | 28.2VA | frozen_inference_graph.pb | 90 |
+| 19 | TX1 | 1280x720 | True | True | - | 78-86% | 15.8W | 0.26A | 26.7VA | frozen_inference_graph.pb | 90 |
 
+on Xavier 544x288:<br>
+![](./document/on_xavier_544x288.png)<br>
 on PC 544x288:<br>
 ![](./document/on_pc_544x288.png)<br>
 on TX2 544x288:<br>

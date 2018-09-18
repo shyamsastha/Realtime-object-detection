@@ -27,13 +27,14 @@ class VideoReader:
             os.makedirs(path)
         return
 
-    def start(self, src, width, height, output_dir='output_movie', output_prefix='output', save_to_file=False):
+    def start(self, src, width, height, output_image_dir='output_image', output_movie_dir='output_movie', output_prefix='output', save_to_file=False):
         """
         output_1532580366.27.avi
         output_file[:-4] # remove .avi from filename
         """
-        output_file = output_dir + '/' + output_prefix + '_' + str(time.time()) + '.avi'
-        self.OUTPUT_DIR = output_dir
+        output_file = output_movie_dir + '/' + output_prefix + '_' + str(time.time()) + '.avi'
+        self.OUTPUT_MOVIE_DIR = output_movie_dir
+        self.OUTPUT_IMAGE_DIR = output_image_dir
 
         # initialize the video camera vid and read the first frame
         self.vid = cv2.VideoCapture(src)
@@ -56,7 +57,7 @@ class VideoReader:
 
         """ save to file """
         if save_to_file:
-            self.mkdir(output_dir)
+            self.mkdir(output_movie_dir)
             fps = self.vid.get(cv2.CAP_PROP_FPS)
             fourcc = cv2.VideoWriter_fourcc('M','J','P','G')
             self.out = cv2.VideoWriter(output_file, int(fourcc), fps, (int(self.real_width), int(self.real_height)))
@@ -86,7 +87,7 @@ class VideoReader:
             self.out.release()
 
     def save_detection_image(self, int_label, cv_bgr, filepath):
-        self.mkdir(self.OUTPUT_DIR+"/"+str(int_label))
+        self.mkdir(self.OUTPUT_IMAGE_DIR+"/"+str(int_label))
 
         dir_path, filename = os.path.split(filepath)
         if not filename in self.detection_counter:
@@ -104,5 +105,5 @@ class VideoReader:
             filetype = ".png"
 
         # save to file
-        cv2.imwrite(self.OUTPUT_DIR+"/"+str(int_label)+"/"+filehead+"_"+str(self.detection_counter[filename])+filetype, cv_bgr)
+        cv2.imwrite(self.OUTPUT_IMAGE_DIR+"/"+str(int_label)+"/"+filehead+"_"+str(self.detection_counter[filename])+filetype, cv_bgr)
         return

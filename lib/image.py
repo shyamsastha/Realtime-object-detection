@@ -58,12 +58,13 @@ class ImageReader:
             os.makedirs(path)
         return
 
-    def start(self, dir_path, output_dir='output_image', save_to_file=False):
+    def start(self, dir_path, output_image_dir='output_image', output_movie_dir='output_movie', save_to_file=False):
         if not os.path.exists(dir_path):
             raise ValueError('File not found: '+dir_path)
         walktree(dir_path, self.add_image_files)
         self.image_files_len = len(self.image_files)
-        self.OUTPUT_DIR = output_dir
+        self.OUTPUT_MOVIE_DIR = output_movie_dir
+        self.OUTPUT_IMAGE_DIR = output_image_dir
 
         print("Start image reader")
         self.running = True
@@ -76,7 +77,7 @@ class ImageReader:
 
         """ save to file """
         if save_to_file:
-            self.mkdir(output_dir)
+            self.mkdir(output_image_dir)
         return self
 
     def getSize(self):
@@ -109,13 +110,13 @@ class ImageReader:
 
     def save(self, cv_bgr, filepath):
         dir_path, filename = os.path.split(filepath)
-        self.mkdir(self.OUTPUT_DIR+"/"+dir_path)
+        self.mkdir(self.OUTPUT_IMAGE_DIR+"/"+dir_path)
         # save to file
-        cv2.imwrite(self.OUTPUT_DIR+"/"+filepath, cv_bgr)
+        cv2.imwrite(self.OUTPUT_IMAGE_DIR+"/"+filepath, cv_bgr)
         return
 
     def save_detection_image(self, int_label, cv_bgr, filepath):
-        self.mkdir(self.OUTPUT_DIR+"/"+str(int_label))
+        self.mkdir(self.OUTPUT_IMAGE_DIR+"/"+str(int_label))
 
         dir_path, filename = os.path.split(filepath)
         if not filename in self.detection_counter:
@@ -133,7 +134,7 @@ class ImageReader:
             filetype = ".png"
 
         # save to file
-        cv2.imwrite(self.OUTPUT_DIR+"/"+str(int_label)+"/"+filehead+"_"+str(self.detection_counter[filename])+filetype, cv_bgr)
+        cv2.imwrite(self.OUTPUT_IMAGE_DIR+"/"+str(int_label)+"/"+filehead+"_"+str(self.detection_counter[filename])+filetype, cv_bgr)
         return
 
     def stop(self):
