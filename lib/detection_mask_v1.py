@@ -366,7 +366,6 @@ class MASKV1():
                             label = category_index[_class]['name']
                             print("label: {}\nscore: {}\nbox: {}".format(label, score, box))
 
-                    MPVariable.vis_frame_counter.value += 1
                     vis_out_time = time.time()
                     """
                     PROCESSING TIME
