@@ -97,7 +97,7 @@ class FasterV2():
         num_detections = graph.get_tensor_by_name('num_detections:0')
 
         if SPLIT_MODEL:
-            SPLIT_TARGET_NAME = ['SecondStagePostprocessor/ToFloat',
+            SPLIT_TARGET_NAME = ['SecondStagePostprocessor/stack_1',
                              'SecondStagePostprocessor/BatchMultiClassNonMaxSuppression/map/strided_slice',
                              'BatchMultiClassNonMaxSuppression/map/TensorArrayStack_4/TensorArrayGatherV3',
                              'Squeeze_2',

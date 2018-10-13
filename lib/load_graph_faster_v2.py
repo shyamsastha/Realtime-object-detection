@@ -103,7 +103,7 @@ class LoadFrozenGraph():
         num_classes = self.cfg['num_classes']
 
         """ SPLIT TARGET NAME """
-        SPLIT_TARGET_NAME = ['SecondStagePostprocessor/ToFloat',
+        SPLIT_TARGET_NAME = ['SecondStagePostprocessor/stack_1',
                              'SecondStagePostprocessor/BatchMultiClassNonMaxSuppression/map/strided_slice',
                              'BatchMultiClassNonMaxSuppression/map/TensorArrayStack_4/TensorArrayGatherV3',
                              'Squeeze_2',
@@ -124,7 +124,7 @@ class LoadFrozenGraph():
         tf.reset_default_graph()
 
         """ ADD CPU INPUT """
-        target_in = [tf.placeholder(tf.float32, shape=(None), name=SPLIT_TARGET_NAME[0]),
+        target_in = [tf.placeholder(tf.int32, shape=(None), name=SPLIT_TARGET_NAME[0]),
                      tf.placeholder(tf.int32, shape=(None), name=SPLIT_TARGET_NAME[1]),
                      tf.placeholder(tf.int32, shape=(None), name=SPLIT_TARGET_NAME[2]),
                      tf.placeholder(tf.float32, shape=(None, num_classes, 4), name=SPLIT_TARGET_NAME[3]),
