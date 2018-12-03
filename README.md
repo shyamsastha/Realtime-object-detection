@@ -220,6 +220,7 @@ VFrames: visualization frames in fps_interval. <br>
 VDrops: When multi-processing visualization is bottleneck, drops. <br>
 
 ## Updates:
+- Support Xavier onboard camera. (with TX2 onboard camera)
 - Add parallel detection for Mask R-CNN.
 - Remove split from Mask R-CNN.
 - Support DeepLab V3 models. `model_type: deeplab_v3`
