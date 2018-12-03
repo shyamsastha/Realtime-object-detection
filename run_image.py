@@ -16,6 +16,10 @@ About repogitory: Forked from GustavZ's github.
 https://github.com/GustavZ/realtime_object_detection
 
 Updates:
+- Add parallel detection for Mask R-CNN.
+- Remove split from Mask R-CNN.
+- Support DeepLab V3 models. `model_type: deeplab_v3`
+
 - Add image input.
 - Rename config.yml parameter name from save_to_movie to save_to_file.
 
@@ -126,12 +130,16 @@ def main():
             detection = TRTV1()
             detection.start(cfg)
         elif model_type == 'mask_v1':
-            from lib.detection_mask_v1 import MASKV1
+            from lib.mtdetection_mask_v1 import MASKV1
             detection = MASKV1()
             detection.start(cfg)
         elif model_type == 'faster_v2':
             from lib.detection_faster_v2 import FasterV2
             detection = FasterV2()
+            detection.start(cfg)
+        elif model_type == 'deeplab_v3':
+            from lib.detection_deeplab_v3 import DeepLabV3
+            detection = DeepLabV3()
             detection.start(cfg)
         else:
             raise IOError(("Unknown model_type."))

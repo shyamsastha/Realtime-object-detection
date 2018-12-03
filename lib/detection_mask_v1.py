@@ -315,6 +315,7 @@ class MASKV1():
                 frame_in_processing_counter -= 1
                 boxes, scores, classes, num, masks, extras = q['results'][0], q['results'][1], q['results'][2], q['results'][3], q['results'][4], q['extras']
                 det_out_time = time.time()
+                boxes, scores, classes = np.squeeze(boxes), np.squeeze(scores), np.squeeze(classes).astype(np.int32)
 
                 """
                 ALWAYS BOX DRAW ON IMAGE
@@ -361,7 +362,7 @@ class MASKV1():
                     """
                     NO VISUALIZE
                     """
-                    for box, score, _class in zip(np.squeeze(boxes), np.squeeze(scores), np.squeeze(classes)):
+                    for box, score, _class in zip(boxes, scores, classes):
                         if proc_frame_counter % DET_INTERVAL == 0 and score > DET_TH:
                             label = category_index[_class]['name']
                             print("label: {}\nscore: {}\nbox: {}".format(label, score, box))

@@ -1,11 +1,13 @@
 import numpy as np
 from tf_utils import visualization_utils_cv2 as vis_util
+from tf_utils import ops as utils_ops
 from lib.session_worker import SessionWorker
-from lib.load_graph_faster_v2 import LoadFrozenGraph
+from lib.mtload_graph_mask_v1 import LoadFrozenGraph
 from lib.load_label_map import LoadLabelMap
 from lib.mpvariable import MPVariable
 from lib.mpvisualizeworker import MPVisualizeWorker, visualization
 from lib.mpio import start_sender
+from lib.color_map import STANDARD_COLORS_ARRAY
 
 import time
 import cv2
@@ -21,7 +23,7 @@ elif PY3:
     import queue as Queue
 
 
-class FasterV2():
+class MASKV1():
     def __init__(self):
         return
 
@@ -40,10 +42,9 @@ class FasterV2():
         FPS_INTERVAL         = cfg['fps_interval']
         DET_INTERVAL         = cfg['det_interval']
         DET_TH               = cfg['det_th']
-        SPLIT_MODEL          = cfg['split_model']
+        WORKER_THREADS       = cfg['worker_threads']
         LOG_DEVICE           = cfg['log_device']
         ALLOW_MEMORY_GROWTH  = cfg['allow_memory_growth']
-        SPLIT_SHAPE          = cfg['split_shape']
         DEBUG_MODE           = cfg['debug_mode']
         LABEL_PATH           = cfg['label_path']
         NUM_CLASSES          = cfg['num_classes']
@@ -95,64 +96,68 @@ class FasterV2():
         detection_scores = graph.get_tensor_by_name('detection_scores:0')
         detection_classes = graph.get_tensor_by_name('detection_classes:0')
         num_detections = graph.get_tensor_by_name('num_detections:0')
+        detection_masks = graph.get_tensor_by_name('detection_masks:0')
 
-        if SPLIT_MODEL:
-            SPLIT_TARGET_NAME = ['SecondStagePostprocessor/stack_1',
-                             'SecondStagePostprocessor/BatchMultiClassNonMaxSuppression/map/strided_slice',
-                             'BatchMultiClassNonMaxSuppression/map/TensorArrayStack_4/TensorArrayGatherV3',
-                             'Squeeze_2',
-                             'Squeeze_3',
-                             'SecondStagePostprocessor/Reshape_4',
-            ]
-            ''' BAD SPLIT POINT
-            SPLIT_TARGET_OUT_NAME = ['ExpandDims_4',
-                             'Preprocessor/map/TensorArrayStack_1/TensorArrayGatherV3',
-                             'Shape',
-                             'ExpandDims_1',
-                             'Reshape_4',
-                             'Reshape_3',
-                             'FirstStageFeatureExtractor/InceptionV2/InceptionV2/Mixed_4e/concat',
-                                 ]
-            SPLIT_TARGET_IN_NAME = ['ExpandDims_4',
-                             'Preprocessor/map/TensorArrayStack_1/TensorArrayGatherV3',
-                             'Shape_6',
-                             'ExpandDims_1',
-                             'Reshape_4',
-                             'Reshape_3',
-                             'FirstStageFeatureExtractor/InceptionV2/InceptionV2/Mixed_4e/concat',
-                                 ]
 
-            '''
+        """ """ """ """ """ """ """ """ """ """ """
+        START CAMERA
+        """ """ """ """ """ """ """ """ """ """ """
+        if SRC_FROM == CAMERA:
+            from lib.webcam import WebcamVideoStream as VideoReader
+        elif SRC_FROM == MOVIE:
+            from lib.video import VideoReader
+        elif SRC_FROM == IMAGE:
+            from lib.image import ImageReader as VideoReader
+        video_reader = VideoReader()
 
-            split_out = []
-            split_in = []
-            for stn in SPLIT_TARGET_NAME:
-                split_out += [graph.get_tensor_by_name(stn+':0')]
-                split_in += [graph.get_tensor_by_name(stn+'_1:0')]
-            ''' BAD SPLIT POINT
-            for stn in SPLIT_TARGET_OUT_NAME:
-                split_out += [graph.get_tensor_by_name(stn+':0')]
-            for stn in SPLIT_TARGET_IN_NAME:
-                if stn == 'Shape_6':
-                    split_in += [graph.get_tensor_by_name(stn+':0')]
-                else:
-                    split_in += [graph.get_tensor_by_name(stn+'_1:0')]
-            '''
+        if SRC_FROM == IMAGE:
+            video_reader.start(VIDEO_INPUT, save_to_file=SAVE_TO_FILE)
+            frame_cols, frame_rows = HEIGHT, WIDTH
+        else: # CAMERA, MOVIE
+            video_reader.start(VIDEO_INPUT, WIDTH, HEIGHT, save_to_file=SAVE_TO_FILE)
+            frame_cols, frame_rows = video_reader.getSize()
+            """ STATISTICS FONT """
+            fontScale = frame_rows/1000.0
+            if fontScale < 0.4:
+                fontScale = 0.4
+            fontThickness = 1 + int(fontScale)
+        fontFace = cv2.FONT_HERSHEY_SIMPLEX
+        if SRC_FROM == MOVIE:
+            dir_path, filename = os.path.split(VIDEO_INPUT)
+            filepath_prefix = filename
+        elif SRC_FROM == CAMERA:
+            filepath_prefix = 'frame'
+        """ """
+
+
+        """ """ """ """ """ """ """ """ """ """ """
+        PREAPRE GRAPH MASK OUTPUT
+        """ """ """ """ """ """ """ """ """ """ """
+        # The following processing is only for single image
+        _detection_boxes = tf.squeeze(detection_boxes, [0])
+        _detection_masks = tf.squeeze(detection_masks, [0])
+        # Reframe is required to translate mask from box coordinates to image coordinates and fit the image size.
+        _real_num_detection = tf.cast(num_detections[0], tf.int32)
+        _detection_boxes = tf.slice(_detection_boxes, [0, 0], [_real_num_detection, -1])
+        _detection_masks = tf.slice(_detection_masks, [0, 0, 0], [_real_num_detection, -1, -1])
+        _detection_masks_reframed = utils_ops.reframe_box_masks_to_image_masks(
+            _detection_masks, _detection_boxes, frame_rows, frame_cols)
+        _detection_masks_reframed = tf.cast(
+            tf.greater(_detection_masks_reframed, 0.5), tf.uint8)
+        # Follow the convention by adding back the batch dimension
+        detection_masks = tf.expand_dims(
+            _detection_masks_reframed, 0)
         """ """
 
         """ """ """ """ """ """ """ """ """ """ """
         START WORKER THREAD
         """ """ """ """ """ """ """ """ """ """ """
-        # gpu_worker uses in split_model and non-split_model
-        gpu_tag = 'GPU'
-        cpu_tag = 'CPU'
-        gpu_worker = SessionWorker(gpu_tag, graph, config)
-        if SPLIT_MODEL:
-            gpu_opts = split_out
-            cpu_worker = SessionWorker(cpu_tag, graph, config)
-            cpu_opts = [detection_boxes, detection_scores, detection_classes, num_detections]
-        else:
-            gpu_opts = [detection_boxes, detection_scores, detection_classes, num_detections]
+        workers = []
+        worker_tag = 'worker'
+        # create session worker threads
+        for i in range(WORKER_THREADS):
+            workers += [SessionWorker(worker_tag, graph, config)]
+        worker_opts = [detection_boxes, detection_scores, detection_classes, num_detections, detection_masks]
         """ """
 
         """
@@ -174,68 +179,6 @@ class FasterV2():
         """ """ """ """ """ """ """ """ """ """ """
         print('Loading...')
         sleep_interval = 0.1
-        """
-        PUT DUMMY DATA INTO GPU WORKER
-        """
-        '''
-        gpu_feeds = {image_tensor:  [np.zeros((300, 300, 3))]}
-        gpu_extras = {}
-        gpu_worker.put_sess_queue(gpu_opts, gpu_feeds, gpu_extras)
-        if SPLIT_MODEL:
-            """
-            PUT DUMMY DATA INTO CPU WORKER
-            """
-            cpu_feeds = {split_in[1]: np.zeros((1))}
-            cpu_extras = {}
-            cpu_worker.put_sess_queue(cpu_opts, cpu_feeds, cpu_extras)
-        """
-        WAIT UNTIL JIT-COMPILE DONE
-        """
-        while True:
-            g = gpu_worker.get_result_queue()
-            if g is None:
-                time.sleep(sleep_interval)
-            else:
-                break
-        if SPLIT_MODEL:
-            while True:
-                c = cpu_worker.get_result_queue()
-                if c is None:
-                    time.sleep(sleep_interval)
-                else:
-                    break
-        """ """
-        '''
-
-        """ """ """ """ """ """ """ """ """ """ """
-        START CAMERA
-        """ """ """ """ """ """ """ """ """ """ """
-        if SRC_FROM == CAMERA:
-            from lib.webcam import WebcamVideoStream as VideoReader
-        elif SRC_FROM == MOVIE:
-            from lib.video import VideoReader
-        elif SRC_FROM == IMAGE:
-            from lib.image import ImageReader as VideoReader
-        video_reader = VideoReader()
-
-        if SRC_FROM == IMAGE:
-            video_reader.start(VIDEO_INPUT, save_to_file=SAVE_TO_FILE)
-        else: # CAMERA, MOVIE
-            video_reader.start(VIDEO_INPUT, WIDTH, HEIGHT, save_to_file=SAVE_TO_FILE)
-            frame_cols, frame_rows = video_reader.getSize()
-            """ STATISTICS FONT """
-            fontScale = frame_rows/1000.0
-            if fontScale < 0.4:
-                fontScale = 0.4
-            fontThickness = 1 + int(fontScale)
-        fontFace = cv2.FONT_HERSHEY_SIMPLEX
-        if SRC_FROM == MOVIE:
-            dir_path, filename = os.path.split(VIDEO_INPUT)
-            filepath_prefix = filename
-        elif SRC_FROM == CAMERA:
-            filepath_prefix = 'frame'
-        """ """
-
 
         """ """ """ """ """ """ """ """ """ """ """
         DETECTION LOOP
@@ -244,6 +187,9 @@ class FasterV2():
         sleep_interval = 0.005
         top_in_time = None
         frame_in_processing_counter = 0
+        current_in_worker_id = -1
+        worker_id_queue = Queue.Queue()
+        retry_worker_id_queue = Queue.Queue()
         try:
             if not video_reader.running:
                 raise IOError(("Input src error."))
@@ -251,67 +197,65 @@ class FasterV2():
                 if top_in_time is None:
                     top_in_time = time.time()
                 """
-                SPRIT/NON-SPLIT MODEL CAMERA TO WORKER
+                RUN ALL WORKERS
                 """
                 if video_reader.running:
-                    if gpu_worker.is_sess_empty(): # must need for speed
-                        cap_in_time = time.time()
-                        if SRC_FROM == IMAGE:
-                            frame, filepath = video_reader.read()
+                    for i in range(WORKER_THREADS):
+                        worker_in_id = i + current_in_worker_id + 1
+                        worker_in_id %= WORKER_THREADS
+                        if workers[worker_in_id].is_sess_empty(): # must need for speed
+                            cap_in_time = time.time()
+                            if SRC_FROM == IMAGE:
+                                frame, filepath = video_reader.read()
+                                if frame is not None:
+                                    frame_in_processing_counter += 1
+                                    frame = cv2.resize(frame, (frame_cols, frame_rows))
+                            else:
+                                frame = video_reader.read()
+                                if frame is not None:
+                                    filepath = filepath_prefix+'_'+str(proc_frame_counter)+'.png'
+                                    frame_in_processing_counter += 1
                             if frame is not None:
-                                frame_in_processing_counter += 1
-                        else:
-                            frame = video_reader.read()
-                            if frame is not None:
-                                filepath = filepath_prefix+'_'+str(proc_frame_counter)+'.png'
-                                frame_in_processing_counter += 1
-                        if frame is not None:
-                            image_expanded = np.expand_dims(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB), axis=0) # np.expand_dims is faster than []
-                            #image_expanded = np.expand_dims(frame, axis=0) # BGR image for input. Of couse, bad accuracy in RGB trained model, but speed up.
-                            cap_out_time = time.time()
-                            # put new queue
-                            gpu_feeds = {image_tensor: image_expanded}
-                            gpu_extras = {'image':frame, 'top_in_time':top_in_time, 'cap_in_time':cap_in_time, 'cap_out_time':cap_out_time, 'filepath': filepath} # always image draw.
-                            gpu_worker.put_sess_queue(gpu_opts, gpu_feeds, gpu_extras)
+                                image_expanded = np.expand_dims(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB), axis=0) # np.expand_dims is faster than []
+                                #image_expanded = np.expand_dims(frame, axis=0) # BGR image for input. Of couse, bad accuracy in RGB trained model, but speed up.
+                                cap_out_time = time.time()
+                                # put new queue
+                                worker_feeds = {image_tensor: image_expanded}
+                                worker_extras = {'image':frame, 'top_in_time':top_in_time, 'cap_in_time':cap_in_time, 'cap_out_time':cap_out_time, 'filepath': filepath} # always image draw.
+                                workers[worker_in_id].put_sess_queue(worker_opts, worker_feeds, worker_extras)
+                                current_in_worker_id = worker_in_id
+                                worker_id_queue.put(worker_in_id)
+                                time.sleep(sleep_interval*10/WORKER_THREADS)
+                            break
                 elif frame_in_processing_counter <= 0:
                     MPVariable.running.value = False
                     break
 
-                g = gpu_worker.get_result_queue()
-                if SPLIT_MODEL:
-                    # if g is None: gpu thread has no output queue. ok skip, let's check cpu thread.
-                    if g is not None:
-                        # gpu thread has output queue.
-                        result_slice_out, extras = g['results'], g['extras']
-                        if cpu_worker.is_sess_empty():
-                            # When cpu thread has no next queue, put new queue.
-                            # else, drop gpu queue.
-                            cpu_feeds = {}
-                            for i in range(len(result_slice_out)):
-                                cpu_feeds.update({split_in[i]:result_slice_out[i]})
-                            cpu_extras = extras
-                            cpu_worker.put_sess_queue(cpu_opts, cpu_feeds, cpu_extras)
-                        else:
-                            # else: cpu thread is busy. don't put new queue. let's check cpu result queue.
-                            frame_in_processing_counter -= 1
-                    # check cpu thread.
-                    q = cpu_worker.get_result_queue()
-                else:
-                    """
-                    NON-SPLIT MODEL
-                    """
-                    q = g
+                q = None
+                if not retry_worker_id_queue.empty():
+                    #print("retry!")
+                    worker_out_id = retry_worker_id_queue.get(block=False)
+                    worker_out_id %= WORKER_THREADS
+                    retry_worker_id_queue.task_done()
+                    q = workers[worker_out_id].get_result_queue()
+                    if q is None:
+                        retry_worker_id_queue.put(worker_out_id)
+                elif not worker_id_queue.empty():
+                    worker_out_id = worker_id_queue.get(block=False)
+                    worker_out_id %= WORKER_THREADS
+                    worker_id_queue.task_done()
+                    q = workers[worker_out_id].get_result_queue()
+                    if q is None:
+                        retry_worker_id_queue.put(worker_out_id)
                 if q is None:
-                    """
-                    SPLIT/NON-SPLIT MODEL
-                    """
                     # detection is not complete yet. ok nothing to do.
                     time.sleep(sleep_interval)
                     continue
+                #print("ok!")
 
                 frame_in_processing_counter -= 1
-                boxes, scores, classes, num, extras = q['results'][0], q['results'][1], q['results'][2], q['results'][3], q['extras']
-                boxes, scores, classes = np.squeeze(boxes), np.squeeze(scores), np.squeeze(classes)
+                boxes, scores, classes, num, masks, extras = q['results'][0], q['results'][1], q['results'][2], q['results'][3], q['results'][4], q['extras']
+                boxes, scores, classes = np.squeeze(boxes), np.squeeze(scores), np.squeeze(classes).astype(np.int32)
                 det_out_time = time.time()
 
                 """
@@ -330,7 +274,7 @@ class FasterV2():
                 else:
                     filepath = extras['filepath']
                 image = visualization(category_index, image, boxes, scores, classes, DEBUG_MODE, VIS_TEXT, FPS_INTERVAL,
-                                      fontFace=fontFace, fontScale=fontScale, fontThickness=fontThickness)
+                                      fontFace=fontFace, fontScale=fontScale, fontThickness=fontThickness, masks=masks)
 
                 """
                 VISUALIZATION
@@ -340,6 +284,7 @@ class FasterV2():
                         if VIS_WORKER:
                             q_out.put({'image':image, 'vis_in_time':vis_in_time})
                         else:
+                            #np.set_printoptions(precision=5, suppress=True, threshold=np.inf)  # suppress scientific float notation
                             """
                             SHOW
                             """
@@ -383,26 +328,17 @@ class FasterV2():
                 """
                 top_in_time = extras['top_in_time']
                 cap_proc_time = extras['cap_out_time'] - extras['cap_in_time']
-                gpu_proc_time = extras[gpu_tag+'_out_time'] - extras[gpu_tag+'_in_time']
-                if SPLIT_MODEL:
-                    cpu_proc_time = extras[cpu_tag+'_out_time'] - extras[cpu_tag+'_in_time']
-                else:
-                    cpu_proc_time = 0
-                lost_proc_time = det_out_time - top_in_time - cap_proc_time - gpu_proc_time - cpu_proc_time
+                worker_proc_time = extras['worker_out_time'] - extras['worker_in_time']
+                lost_proc_time = det_out_time - top_in_time - cap_proc_time - worker_proc_time
                 total_proc_time = det_out_time - top_in_time
                 MPVariable.cap_proc_time.value += cap_proc_time
-                MPVariable.gpu_proc_time.value += gpu_proc_time
-                MPVariable.cpu_proc_time.value += cpu_proc_time
+                MPVariable.worker_proc_time.value += worker_proc_time
                 MPVariable.lost_proc_time.value += lost_proc_time
                 MPVariable.total_proc_time.value += total_proc_time
 
                 if DEBUG_MODE:
-                    if SPLIT_MODEL:
-                        sys.stdout.write('snapshot FPS:{: ^5.1f} total:{: ^10.5f} cap:{: ^10.5f} gpu:{: ^10.5f} cpu:{: ^10.5f} lost:{: ^10.5f} | vis:{: ^10.5f}\n'.format(
-                            MPVariable.fps.value, total_proc_time, cap_proc_time, gpu_proc_time, cpu_proc_time, lost_proc_time, vis_proc_time))
-                    else:
-                        sys.stdout.write('snapshot FPS:{: ^5.1f} total:{: ^10.5f} cap:{: ^10.5f} gpu:{: ^10.5f} lost:{: ^10.5f} | vis:{: ^10.5f}\n'.format(
-                            MPVariable.fps.value, total_proc_time, cap_proc_time, gpu_proc_time, lost_proc_time, vis_proc_time))
+                    sys.stdout.write('snapshot FPS:{: ^5.1f} total:{: ^10.5f} cap:{: ^10.5f} worker:{: ^10.5f} lost:{: ^10.5f} | vis:{: ^10.5f}\n'.format(
+                        MPVariable.fps.value, total_proc_time, cap_proc_time, worker_proc_time, lost_proc_time, vis_proc_time))
                 """
                 EXIT WITHOUT GUI
                 """
@@ -432,9 +368,8 @@ class FasterV2():
             if VISUALIZE and VIS_WORKER:
                 q_out.put(None)
             MPVariable.running.value = False
-            gpu_worker.stop()
-            if SPLIT_MODEL:
-                cpu_worker.stop()
+            for i in range(WORKER_THREADS):
+                workers[i].stop()
             video_reader.stop()
 
             if VISUALIZE:

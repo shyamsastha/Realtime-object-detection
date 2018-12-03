@@ -1,16 +1,19 @@
 import numpy as np
 from tf_utils import visualization_utils_cv2 as vis_util
+from tf_utils import ops as utils_ops
 from lib.session_worker import SessionWorker
-from lib.load_graph_faster_v2 import LoadFrozenGraph
+from lib.load_graph_deeplab_v3 import LoadFrozenGraph
 from lib.load_label_map import LoadLabelMap
 from lib.mpvariable import MPVariable
-from lib.mpvisualizeworker import MPVisualizeWorker, visualization
+from lib.mpvisualizeworker import MPVisualizeWorker, deeplab_visualization, to_layer, overdraw, blending
 from lib.mpio import start_sender
+from lib.color_map import STANDARD_COLORS_ARRAY
 
 import time
 import cv2
 import tensorflow as tf
 import os
+from skimage import measure
 
 import sys
 PY2 = sys.version_info[0] == 2
@@ -20,8 +23,67 @@ if PY2:
 elif PY3:
     import queue as Queue
 
+#np.set_printoptions(precision=5, suppress=True, threshold=np.inf)  # suppress scientific float notation
+def detect_boxes_and_classes(seg_map):
+    label_names = np.asarray([
+        'background', 'aeroplane', 'bicycle', 'bird', 'boat', 'bottle', 'bus',
+        'car', 'cat', 'chair', 'cow', 'diningtable', 'dog', 'horse', 'motorbike',
+        'person', 'pottedplant', 'sheep', 'sofa', 'train', 'tv'])
 
-class FasterV2():
+    MIN_AREA=500
+    boxes = []
+    classes = []
+    map_labeled = measure.label(seg_map, connectivity=1)
+    for region in measure.regionprops(map_labeled):
+        if region.area > MIN_AREA:
+            boxes.append([region.bbox[0],region.bbox[1],region.bbox[2],region.bbox[3]])
+            classes.append(seg_map[tuple(region.coords[0])])
+            print(label_names[seg_map[tuple(region.coords[0])]])
+    return np.array(boxes), np.array(classes)
+
+def create_pascal_label_colormap():
+    """Creates a label colormap used in PASCAL VOC segmentation benchmark.
+
+    Returns:
+        A Colormap for visualizing segmentation results.
+    """
+    colormap = np.zeros((256, 3), dtype=int)
+    ind = np.arange(256, dtype=int)
+
+    for shift in reversed(range(8)):
+        for channel in range(3):
+            colormap[:, channel] |= ((ind >> channel) & 1) << shift
+        ind >>= 3
+
+    return colormap
+
+
+def label_to_color_image(label):
+    """Adds color defined by the dataset colormap to the label.
+
+    Args:
+        label: A 2D array with integer type, storing the segmentation label.
+
+    Returns:
+        result: A 2D array with floating type. The element of the array
+            is the color indexed by the corresponding element in the input label
+            to the PASCAL color map.
+
+    Raises:
+        ValueError: If label is not of rank 2 or its value is larger than color
+            map maximum entry.
+    """
+    if label.ndim != 2:
+        raise ValueError('Expect 2-D input label')
+
+    colormap = create_pascal_label_colormap()
+
+    if np.max(label) >= len(colormap):
+        raise ValueError('label value too large.')
+
+    return colormap[label]
+
+class DeepLabV3():
     def __init__(self):
         return
 
@@ -40,13 +102,12 @@ class FasterV2():
         FPS_INTERVAL         = cfg['fps_interval']
         DET_INTERVAL         = cfg['det_interval']
         DET_TH               = cfg['det_th']
-        SPLIT_MODEL          = cfg['split_model']
         LOG_DEVICE           = cfg['log_device']
         ALLOW_MEMORY_GROWTH  = cfg['allow_memory_growth']
-        SPLIT_SHAPE          = cfg['split_shape']
         DEBUG_MODE           = cfg['debug_mode']
         LABEL_PATH           = cfg['label_path']
         NUM_CLASSES          = cfg['num_classes']
+        MIN_AREA             = 500
         SRC_FROM             = cfg['src_from']
         CAMERA = 0
         MOVIE  = 1
@@ -90,54 +151,47 @@ class FasterV2():
         PREPARE GRAPH I/O TO VARIABLE
         """ """ """ """ """ """ """ """ """ """ """
         # Define Input and Ouput tensors
-        image_tensor = graph.get_tensor_by_name('image_tensor:0')
-        detection_boxes = graph.get_tensor_by_name('detection_boxes:0')
-        detection_scores = graph.get_tensor_by_name('detection_scores:0')
-        detection_classes = graph.get_tensor_by_name('detection_classes:0')
-        num_detections = graph.get_tensor_by_name('num_detections:0')
+        image_tensor = graph.get_tensor_by_name('ImageTensor:0')
+        semantic_predictions = graph.get_tensor_by_name('SemanticPredictions:0')
 
-        if SPLIT_MODEL:
-            SPLIT_TARGET_NAME = ['SecondStagePostprocessor/stack_1',
-                             'SecondStagePostprocessor/BatchMultiClassNonMaxSuppression/map/strided_slice',
-                             'BatchMultiClassNonMaxSuppression/map/TensorArrayStack_4/TensorArrayGatherV3',
-                             'Squeeze_2',
-                             'Squeeze_3',
-                             'SecondStagePostprocessor/Reshape_4',
-            ]
-            ''' BAD SPLIT POINT
-            SPLIT_TARGET_OUT_NAME = ['ExpandDims_4',
-                             'Preprocessor/map/TensorArrayStack_1/TensorArrayGatherV3',
-                             'Shape',
-                             'ExpandDims_1',
-                             'Reshape_4',
-                             'Reshape_3',
-                             'FirstStageFeatureExtractor/InceptionV2/InceptionV2/Mixed_4e/concat',
-                                 ]
-            SPLIT_TARGET_IN_NAME = ['ExpandDims_4',
-                             'Preprocessor/map/TensorArrayStack_1/TensorArrayGatherV3',
-                             'Shape_6',
-                             'ExpandDims_1',
-                             'Reshape_4',
-                             'Reshape_3',
-                             'FirstStageFeatureExtractor/InceptionV2/InceptionV2/Mixed_4e/concat',
-                                 ]
 
-            '''
+        """ """ """ """ """ """ """ """ """ """ """
+        START CAMERA
+        """ """ """ """ """ """ """ """ """ """ """
+        if SRC_FROM == CAMERA:
+            from lib.webcam import WebcamVideoStream as VideoReader
+        elif SRC_FROM == MOVIE:
+            from lib.video import VideoReader
+        elif SRC_FROM == IMAGE:
+            from lib.image import ImageReader as VideoReader
+        video_reader = VideoReader()
 
-            split_out = []
-            split_in = []
-            for stn in SPLIT_TARGET_NAME:
-                split_out += [graph.get_tensor_by_name(stn+':0')]
-                split_in += [graph.get_tensor_by_name(stn+'_1:0')]
-            ''' BAD SPLIT POINT
-            for stn in SPLIT_TARGET_OUT_NAME:
-                split_out += [graph.get_tensor_by_name(stn+':0')]
-            for stn in SPLIT_TARGET_IN_NAME:
-                if stn == 'Shape_6':
-                    split_in += [graph.get_tensor_by_name(stn+':0')]
-                else:
-                    split_in += [graph.get_tensor_by_name(stn+'_1:0')]
-            '''
+        if SRC_FROM == IMAGE:
+            video_reader.start(VIDEO_INPUT, save_to_file=SAVE_TO_FILE)
+            frame_cols, frame_rows = HEIGHT, WIDTH
+        else: # CAMERA, MOVIE
+            video_reader.start(VIDEO_INPUT, WIDTH, HEIGHT, save_to_file=SAVE_TO_FILE)
+            frame_cols, frame_rows = video_reader.getSize()
+            """ STATISTICS FONT """
+            fontScale = frame_rows/1000.0
+            if fontScale < 0.4:
+                fontScale = 0.4
+            fontThickness = 1 + int(fontScale)
+        fontFace = cv2.FONT_HERSHEY_SIMPLEX
+        if SRC_FROM == MOVIE:
+            dir_path, filename = os.path.split(VIDEO_INPUT)
+            filepath_prefix = filename
+        elif SRC_FROM == CAMERA:
+            filepath_prefix = 'frame'
+        """ """
+
+        LABEL_NAMES = np.asarray([
+            'background', 'aeroplane', 'bicycle', 'bird', 'boat', 'bottle', 'bus',
+            'car', 'cat', 'chair', 'cow', 'diningtable', 'dog', 'horse', 'motorbike',
+            'person', 'pottedplant', 'sheep', 'sofa', 'train', 'tv'
+        ])
+        FULL_LABEL_MAP = np.arange(len(LABEL_NAMES)).reshape(len(LABEL_NAMES), 1)
+        FULL_COLOR_MAP = label_to_color_image(FULL_LABEL_MAP)
         """ """
 
         """ """ """ """ """ """ """ """ """ """ """
@@ -147,12 +201,7 @@ class FasterV2():
         gpu_tag = 'GPU'
         cpu_tag = 'CPU'
         gpu_worker = SessionWorker(gpu_tag, graph, config)
-        if SPLIT_MODEL:
-            gpu_opts = split_out
-            cpu_worker = SessionWorker(cpu_tag, graph, config)
-            cpu_opts = [detection_boxes, detection_scores, detection_classes, num_detections]
-        else:
-            gpu_opts = [detection_boxes, detection_scores, detection_classes, num_detections]
+        gpu_opts = [semantic_predictions]
         """ """
 
         """
@@ -174,68 +223,6 @@ class FasterV2():
         """ """ """ """ """ """ """ """ """ """ """
         print('Loading...')
         sleep_interval = 0.1
-        """
-        PUT DUMMY DATA INTO GPU WORKER
-        """
-        '''
-        gpu_feeds = {image_tensor:  [np.zeros((300, 300, 3))]}
-        gpu_extras = {}
-        gpu_worker.put_sess_queue(gpu_opts, gpu_feeds, gpu_extras)
-        if SPLIT_MODEL:
-            """
-            PUT DUMMY DATA INTO CPU WORKER
-            """
-            cpu_feeds = {split_in[1]: np.zeros((1))}
-            cpu_extras = {}
-            cpu_worker.put_sess_queue(cpu_opts, cpu_feeds, cpu_extras)
-        """
-        WAIT UNTIL JIT-COMPILE DONE
-        """
-        while True:
-            g = gpu_worker.get_result_queue()
-            if g is None:
-                time.sleep(sleep_interval)
-            else:
-                break
-        if SPLIT_MODEL:
-            while True:
-                c = cpu_worker.get_result_queue()
-                if c is None:
-                    time.sleep(sleep_interval)
-                else:
-                    break
-        """ """
-        '''
-
-        """ """ """ """ """ """ """ """ """ """ """
-        START CAMERA
-        """ """ """ """ """ """ """ """ """ """ """
-        if SRC_FROM == CAMERA:
-            from lib.webcam import WebcamVideoStream as VideoReader
-        elif SRC_FROM == MOVIE:
-            from lib.video import VideoReader
-        elif SRC_FROM == IMAGE:
-            from lib.image import ImageReader as VideoReader
-        video_reader = VideoReader()
-
-        if SRC_FROM == IMAGE:
-            video_reader.start(VIDEO_INPUT, save_to_file=SAVE_TO_FILE)
-        else: # CAMERA, MOVIE
-            video_reader.start(VIDEO_INPUT, WIDTH, HEIGHT, save_to_file=SAVE_TO_FILE)
-            frame_cols, frame_rows = video_reader.getSize()
-            """ STATISTICS FONT """
-            fontScale = frame_rows/1000.0
-            if fontScale < 0.4:
-                fontScale = 0.4
-            fontThickness = 1 + int(fontScale)
-        fontFace = cv2.FONT_HERSHEY_SIMPLEX
-        if SRC_FROM == MOVIE:
-            dir_path, filename = os.path.split(VIDEO_INPUT)
-            filepath_prefix = filename
-        elif SRC_FROM == CAMERA:
-            filepath_prefix = 'frame'
-        """ """
-
 
         """ """ """ """ """ """ """ """ """ """ """
         DETECTION LOOP
@@ -244,6 +231,8 @@ class FasterV2():
         sleep_interval = 0.005
         top_in_time = None
         frame_in_processing_counter = 0
+        resize_ratio = 1.0 * 513 / max(frame_cols, frame_rows)
+        target_size = (int(resize_ratio * frame_cols), int(resize_ratio * frame_rows))
         try:
             if not video_reader.running:
                 raise IOError(("Input src error."))
@@ -251,7 +240,7 @@ class FasterV2():
                 if top_in_time is None:
                     top_in_time = time.time()
                 """
-                SPRIT/NON-SPLIT MODEL CAMERA TO WORKER
+                NON-SPLIT MODEL CAMERA TO WORKER
                 """
                 if video_reader.running:
                     if gpu_worker.is_sess_empty(): # must need for speed
@@ -266,6 +255,7 @@ class FasterV2():
                                 filepath = filepath_prefix+'_'+str(proc_frame_counter)+'.png'
                                 frame_in_processing_counter += 1
                         if frame is not None:
+                            frame = cv2.resize(frame, target_size)
                             image_expanded = np.expand_dims(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB), axis=0) # np.expand_dims is faster than []
                             #image_expanded = np.expand_dims(frame, axis=0) # BGR image for input. Of couse, bad accuracy in RGB trained model, but speed up.
                             cap_out_time = time.time()
@@ -278,40 +268,15 @@ class FasterV2():
                     break
 
                 g = gpu_worker.get_result_queue()
-                if SPLIT_MODEL:
-                    # if g is None: gpu thread has no output queue. ok skip, let's check cpu thread.
-                    if g is not None:
-                        # gpu thread has output queue.
-                        result_slice_out, extras = g['results'], g['extras']
-                        if cpu_worker.is_sess_empty():
-                            # When cpu thread has no next queue, put new queue.
-                            # else, drop gpu queue.
-                            cpu_feeds = {}
-                            for i in range(len(result_slice_out)):
-                                cpu_feeds.update({split_in[i]:result_slice_out[i]})
-                            cpu_extras = extras
-                            cpu_worker.put_sess_queue(cpu_opts, cpu_feeds, cpu_extras)
-                        else:
-                            # else: cpu thread is busy. don't put new queue. let's check cpu result queue.
-                            frame_in_processing_counter -= 1
-                    # check cpu thread.
-                    q = cpu_worker.get_result_queue()
-                else:
-                    """
-                    NON-SPLIT MODEL
-                    """
-                    q = g
-                if q is None:
-                    """
-                    SPLIT/NON-SPLIT MODEL
-                    """
+                if g is None:
                     # detection is not complete yet. ok nothing to do.
                     time.sleep(sleep_interval)
                     continue
 
                 frame_in_processing_counter -= 1
-                boxes, scores, classes, num, extras = q['results'][0], q['results'][1], q['results'][2], q['results'][3], q['extras']
-                boxes, scores, classes = np.squeeze(boxes), np.squeeze(scores), np.squeeze(classes)
+                batch_seg_map, extras = g['results'][0], g['extras']
+                seg_map = batch_seg_map[0]
+
                 det_out_time = time.time()
 
                 """
@@ -329,7 +294,22 @@ class FasterV2():
                     fontThickness = 1 + int(fontScale)
                 else:
                     filepath = extras['filepath']
-                image = visualization(category_index, image, boxes, scores, classes, DEBUG_MODE, VIS_TEXT, FPS_INTERVAL,
+
+                seg_image = STANDARD_COLORS_ARRAY[seg_map]
+                #seg_image = label_to_color_image(seg_map).astype(np.uint8)
+                #unique_labels = np.unique(seg_map)
+                #rgb_seg = full_color_map[unique_labels].astype(np.uint8)
+                ### TODO: to bgr
+                #image = to_layer(image, seg_image, background_alpha=1.0, foreground_alpha=1.0, gamma=0)
+                b_channel, g_channel, r_channel = cv2.split(seg_image)
+                # Make a single channel mask if background: 0 else: 1
+                mask = seg_map > 0
+                alpha_channel = np.ones(b_channel.shape, dtype=b_channel.dtype) * 0 #creating a dummy alpha channel image.
+                seg_image_bgra = cv2.merge((b_channel, g_channel, r_channel, alpha_channel))
+                seg_image = cv2.merge(cv2.split(seg_image_bgra)[:3])
+                #image = overdraw(image, seg_image, mask)
+                image = blending(image, seg_image)
+                image = deeplab_visualization(LABEL_NAMES, image, seg_map, DEBUG_MODE, VIS_TEXT, FPS_INTERVAL,
                                       fontFace=fontFace, fontScale=fontScale, fontThickness=fontThickness)
 
                 """
@@ -384,10 +364,7 @@ class FasterV2():
                 top_in_time = extras['top_in_time']
                 cap_proc_time = extras['cap_out_time'] - extras['cap_in_time']
                 gpu_proc_time = extras[gpu_tag+'_out_time'] - extras[gpu_tag+'_in_time']
-                if SPLIT_MODEL:
-                    cpu_proc_time = extras[cpu_tag+'_out_time'] - extras[cpu_tag+'_in_time']
-                else:
-                    cpu_proc_time = 0
+                cpu_proc_time = 0
                 lost_proc_time = det_out_time - top_in_time - cap_proc_time - gpu_proc_time - cpu_proc_time
                 total_proc_time = det_out_time - top_in_time
                 MPVariable.cap_proc_time.value += cap_proc_time
@@ -397,12 +374,8 @@ class FasterV2():
                 MPVariable.total_proc_time.value += total_proc_time
 
                 if DEBUG_MODE:
-                    if SPLIT_MODEL:
-                        sys.stdout.write('snapshot FPS:{: ^5.1f} total:{: ^10.5f} cap:{: ^10.5f} gpu:{: ^10.5f} cpu:{: ^10.5f} lost:{: ^10.5f} | vis:{: ^10.5f}\n'.format(
-                            MPVariable.fps.value, total_proc_time, cap_proc_time, gpu_proc_time, cpu_proc_time, lost_proc_time, vis_proc_time))
-                    else:
-                        sys.stdout.write('snapshot FPS:{: ^5.1f} total:{: ^10.5f} cap:{: ^10.5f} gpu:{: ^10.5f} lost:{: ^10.5f} | vis:{: ^10.5f}\n'.format(
-                            MPVariable.fps.value, total_proc_time, cap_proc_time, gpu_proc_time, lost_proc_time, vis_proc_time))
+                    sys.stdout.write('snapshot FPS:{: ^5.1f} total:{: ^10.5f} cap:{: ^10.5f} gpu:{: ^10.5f} lost:{: ^10.5f} | vis:{: ^10.5f}\n'.format(
+                        MPVariable.fps.value, total_proc_time, cap_proc_time, gpu_proc_time, lost_proc_time, vis_proc_time))
                 """
                 EXIT WITHOUT GUI
                 """
@@ -433,8 +406,6 @@ class FasterV2():
                 q_out.put(None)
             MPVariable.running.value = False
             gpu_worker.stop()
-            if SPLIT_MODEL:
-                cpu_worker.stop()
             video_reader.stop()
 
             if VISUALIZE:
