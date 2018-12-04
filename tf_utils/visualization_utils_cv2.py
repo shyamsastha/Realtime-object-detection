@@ -136,12 +136,12 @@ def draw_mask_on_image_array_cv(image, mask, color=(0, 0, 255), alpha=0.4):
   cv2.addWeighted(mask, alpha, image, 1.0, 0, image)
   return
 
-
+  
 def visualize_boxes_and_labels_on_image_array(
     image,
     boxes,
-    scores,
     classes,
+    scores,
     category_index,
     instance_masks=None,
     use_normalized_coordinates=False,
@@ -190,7 +190,7 @@ def visualize_boxes_and_labels_on_image_array(
   # that correspond to the same location.
   box_to_display_str_map = collections.defaultdict(list)
   box_to_color_map = collections.defaultdict(str)
-  box_to_instance_masks_map = {}
+  box_to_instance_masks_map = {}  
   if not max_boxes_to_draw:
     max_boxes_to_draw = boxes.shape[0]
   for i in range(min(max_boxes_to_draw, boxes.shape[0])):
@@ -219,16 +219,12 @@ def visualize_boxes_and_labels_on_image_array(
           box_to_color_map[box] = (0, 140, 255) # 'DarkOrange'
         else:
           box_to_color_map[box] = STANDARD_COLORS[
-            (int)(classes[i] % len(STANDARD_COLORS))]
+              classes[i] % len(STANDARD_COLORS)]
 
   # Draw all boxes onto image.
   for box, color in box_to_color_map.items():
     ymin, xmin, ymax, xmax = box
     if instance_masks is not None:
-      #print("==========")
-      #np.set_printoptions(precision=5, threshold=np.inf, suppress=True)  # suppress scientific float notation
-      #print(box_to_instance_masks_map[box])
-
       draw_mask_on_image_array_cv(
         image,
         box_to_instance_masks_map[box],
@@ -246,3 +242,4 @@ def visualize_boxes_and_labels_on_image_array(
         use_normalized_coordinates=use_normalized_coordinates)
 
   return image
+

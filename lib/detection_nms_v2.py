@@ -279,7 +279,6 @@ class NMSV2():
 
                 frame_in_processing_counter -= 1
                 boxes, scores, classes, num, extras = q['results'][0], q['results'][1], q['results'][2], q['results'][3], q['extras']
-                boxes, scores, classes = np.squeeze(boxes), np.squeeze(scores), np.squeeze(classes)
                 det_out_time = time.time()
 
                 """
@@ -326,7 +325,7 @@ class NMSV2():
                     """
                     NO VISUALIZE
                     """
-                    for box, score, _class in zip(boxes, scores, classes):
+                    for box, score, _class in zip(np.squeeze(boxes), np.squeeze(scores), np.squeeze(classes)):
                         if proc_frame_counter % DET_INTERVAL == 0 and score > DET_TH:
                             label = category_index[_class]['name']
                             print("label: {}\nscore: {}\nbox: {}".format(label, score, box))

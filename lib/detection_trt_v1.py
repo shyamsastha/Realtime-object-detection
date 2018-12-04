@@ -276,7 +276,6 @@ class TRTV1():
 
                 frame_in_processing_counter -= 1
                 boxes, scores, classes, extras = q['results'][0], q['results'][1], q['results'][2], q['extras']
-                boxes, scores, classes = np.squeeze(boxes), np.squeeze(scores), np.squeeze(classes)
                 classes = np.add(classes, 1) # trt_v1 label index start from 0.
                 det_out_time = time.time()
 
@@ -324,7 +323,7 @@ class TRTV1():
                     """
                     NO VISUALIZE
                     """
-                    for box, score, _class in zip(boxes, scores, classes):
+                    for box, score, _class in zip(np.squeeze(boxes), np.squeeze(scores), np.squeeze(classes)):
                         if proc_frame_counter % DET_INTERVAL == 0 and score > DET_TH:
                             label = category_index[_class]['name']
                             print("label: {}\nscore: {}\nbox: {}".format(label, score, box))

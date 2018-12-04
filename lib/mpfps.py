@@ -228,29 +228,25 @@ class FPS():
                     if frames == 0:
                         total = 0
                         cap = 0
-                        worker = 0
                         gpu = 0
                         cpu = 0
                         lost = 0
                     else:
                         total = MPVariable.total_proc_time.value/frames
                         cap = MPVariable.cap_proc_time.value/frames
-                        worker = MPVariable.gpu_proc_time.value/frames
                         gpu = MPVariable.gpu_proc_time.value/frames
                         cpu = MPVariable.cpu_proc_time.value/frames
                         lost = MPVariable.lost_proc_time.value/frames
-                    print("FPS:{: ^5.1f} Frames:{: ^3} Seconds:{: ^10.5f} | 1FRAME total:{: ^10.5f} cap:{: ^10.5f} worker:{: ^10.5f} gpu:{: ^10.5f} cpu:{: ^10.5f} lost:{: ^10.5f} send:{: ^10.5f} | VFPS:{: ^5.1f} VFrames:{: ^3} VDrops:{: ^3}"
+                    print("FPS:{: ^5.1f} Frames:{: ^3} Seconds:{: ^10.5f} | 1FRAME total:{: ^10.5f} cap:{: ^10.5f} gpu:{: ^10.5f} cpu:{: ^10.5f} lost:{: ^10.5f} send:{: ^10.5f} | VFPS:{: ^5.1f} VFrames:{: ^3} VDrops:{: ^3}"
                           .format(MPVariable.fps.value, MPVariable.fps_frames.value, MPVariable.fps_seconds.value,
                                   total,
                                   cap,
-                                  worker,
                                   gpu,
                                   cpu,
                                   lost,
                                   MPVariable.send_proc_time.value,
                                   MPVariable.vis_fps.value, MPVariable.vis_fps_frames.value, MPVariable.vis_drop_frames.value))
                     MPVariable.cap_proc_time.value = 0
-                    MPVariable.worker_proc_time.value = 0
                     MPVariable.gpu_proc_time.value = 0
                     MPVariable.cpu_proc_time.value = 0
                     MPVariable.lost_proc_time.value = 0

@@ -8,10 +8,6 @@ Download model from here: [detection_model_zoo](https://github.com/tensorflow/mo
 ```
 wget http://download.tensorflow.org/models/object_detection/ssd_mobilenet_v1_coco_2018_01_28.tar.gz
 ```
-and here: [TensorFlow DeepLab Model Zoo](https://github.com/tensorflow/models/blob/master/research/deeplab/g3doc/model_zoo.md)
-```
-wget http://download.tensorflow.org/models/deeplabv3_mnv2_pascal_train_aug_2018_01_29.tar.gz
-```
 
 ## Support models
 | Model | model_type | split_shape |
@@ -35,11 +31,6 @@ wget http://download.tensorflow.org/models/deeplabv3_mnv2_pascal_train_aug_2018_
 | mask_rcnn_inception_v2_coco_2018_01_28 | mask_v1 | |
 | mask_rcnn_resnet101_atrous_coco_2018_01_28 | mask_v1 | |
 | mask_rcnn_resnet50_atrous_coco_2018_01_28 | mask_v1 | |
-| deeplabv3_mnv2_pascal_train_aug_2018_01_29 | deeplab_v3 | |
-| deeplabv3_mnv2_pascal_trainval_2018_01_29 | deeplab_v3 | |
-| deeplabv3_pascal_train_aug_2018_01_04 | deeplab_v3 | |
-| deeplabv3_pascal_trainval_2018_01_04 | deeplab_v3 | |
-
 
 * TensorRT -> `model_type: 'trt_v1'`<br>
 Requirements: [https://github.com/NVIDIA-Jetson/tf_trt_models](https://github.com/NVIDIA-Jetson/tf_trt_models)<br>
@@ -48,9 +39,7 @@ Requirements: [https://github.com/NVIDIA-Jetson/tf_trt_models](https://github.co
 faster_rcnn_nas_coco_2018_01_28 occurred Out Of Memory on my PC.<br>
 Other Faster R-CNN has not checked yet.<br>
 * Mask R-CNN: PC/Xavier only<br>
-Removed split_model.<br>
-Add worker_threads for parallel detection. A little bit fast, maybe.<br>
-* DeepLab V3: PC/Xavier only<br>
+split_model can be True, but it's slow yet.<br>
 
 See also:<br>
 * [https://github.com/tensorflow/models/issues/3270](https://github.com/tensorflow/models/issues/3270)
@@ -58,7 +47,7 @@ See also:<br>
 
 ## Getting Started:
 - login Jetson TX2. Desktop login or ssh remote login. `ssh -C -Y ubuntu@xxx.xxx.xxx.xxx`
-- edit `config.yml` for your environment. (Ex. camera_input: 0 # for PC)
+- edit `config.yml` for your environment. (Ex. video_input: 0 # for PC)
 - run `python run_stream.py` realtime object detection from webcam
 - or run `python run_video.py` realtime object detection from movie file
 - or run `python run_image.py` realtime object detection from image file
@@ -75,8 +64,6 @@ Also, OpenCV >= 3.1 and Tensorflow >= 1.4 (1.6 is good)
 ## config.yml
 #### Image
 with run_image.py  
-Please create 'images' directory and put image files.(jpeg,jpg,png)  
-Subdirectories can also be used.  
 ```
 image_input: 'images'       # input image dir
 ```
@@ -90,19 +77,15 @@ with run_stream.py
 This is OpenCV argument.
 * USB Webcam on PC
 ```
-camera_input: 0
+video_input: 0
 ```
 * USB Webcam on TX2
 ```
-camera_input: 1
-```
-* Onboard camera on Xavier (with TX2 onboard camera)
-```
-camera_input: "nvarguscamerasrc ! video/x-raw(memory:NVMM), width=1280, height=720,format=NV12, framerate=120/1 ! nvvidconv ! video/x-raw,format=I420 ! videoflip method=rotate-180 ! appsink"
+video_input: 1
 ```
 * Onboard camera on TX2
 ```
-camera_input: "nvcamerasrc ! video/x-raw(memory:NVMM), width=(int)1280, height=(int)720,format=(string)I420, framerate=(fraction)30/1 ! nvvidconv flip-method=0 ! video/x-raw, format=(string)BGRx ! videoconvert ! video/x-raw, format=(string)BGR ! appsink"
+video_input: "nvcamerasrc ! video/x-raw(memory:NVMM), width=(int)1280, height=(int)720,format=(string)I420, framerate=(fraction)30/1 ! nvvidconv flip-method=0 ! video/x-raw, format=(string)BGRx ! videoconvert ! video/x-raw, format=(string)BGR ! appsink"
 ```
 
 ### Save to file
@@ -148,7 +131,7 @@ max_vis_fps: 30
 vis_text: True
 ```
 * Visualization FPS limit with Multi-Processing<br>
-This is good to use with `save_to_file: True`.
+This is good to use with `save_to_movie: True`.
 ```
 visualize: True
 vis_worker: True
@@ -220,11 +203,6 @@ VFrames: visualization frames in fps_interval. <br>
 VDrops: When multi-processing visualization is bottleneck, drops. <br>
 
 ## Updates:
-- Support Xavier onboard camera. (with TX2 onboard camera)
-- Add parallel detection for Mask R-CNN.
-- Remove split from Mask R-CNN.
-- Support DeepLab V3 models. `model_type: deeplab_v3`
-
 - Add image input.
 - Rename config.yml parameter name from save_to_movie to save_to_file.
 
@@ -276,10 +254,8 @@ VDrops: When multi-processing visualization is bottleneck, drops. <br>
       * Pyton 3.6.5/OpenCV 3.4.1/Tensorflow 1.6.1
 * Jetson Xavier
   * JetPack 4.0 Developer Preview
-    * Python 2.7/OpenCV 3.3.1/Tensorflow 1.6.1
-    * Python 2.7/OpenCV 3.3.1/Tensorflow 1.10.1 (slow)
-  * JetPack 4.1.1 Developer Preview
-    * Python 3.6.7/OpenCV 3.4.1/Tensorflow 1.10.1 (seems fast. I changed opencv build options.)
+  * Python 2.7/OpenCV 3.3.1/Tensorflow 1.6.1
+  * Python 2.7/OpenCV 3.3.1/Tensorflow 1.10.1 (slow)
 * Jetson TX2
   * JetPack 3.2/3.2.1
     * Python 3.6

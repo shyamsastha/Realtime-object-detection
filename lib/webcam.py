@@ -16,7 +16,6 @@ class WebcamVideoStream:
         self.out = None
         self.running = False
         self.detection_counter = {}
-        self.isGSTREAMER = False
         return
 
     def __del__(self):
@@ -45,17 +44,12 @@ class WebcamVideoStream:
         if not self.vid.isOpened():
             # camera failed
             raise IOError(("Couldn't open video file or webcam."))
-        if isinstance(src, str) and src.startswith("nvarguscamerasrc"):
-            self.isGSTREAMER = True
-        if not self.isGSTREAMER:
-            self.vid.set(cv2.CAP_PROP_FRAME_WIDTH, width)
-            self.vid.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
+        self.vid.set(cv2.CAP_PROP_FRAME_WIDTH, width)
+        self.vid.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
         self.ret, self.frame = self.vid.read()
         if not self.ret:
             self.vid.release()
             raise IOError(("Couldn't open video frame."))
-        if self.isGSTREAMER:
-            self.frame = cv2.cvtColor(self.frame, cv2.COLOR_YUV2RGB_I420)
 
         # initialize the variable used to indicate if the thread should
         # check camera vid shape
@@ -82,18 +76,10 @@ class WebcamVideoStream:
 
     def update(self):
         try:
-            if self.isGSTREAMER:
-                # keep looping infinitely until the stream is closed
-                while self.running:
-                    # otherwise, read the next frame from the stream
-                    self.ret, frame = self.vid.read()
-                    if self.ret:
-                        self.frame = cv2.cvtColor(frame, cv2.COLOR_YUV2RGB_I420)
-            else:
-                # keep looping infinitely until the stream is closed
-                while self.running:
-                    # otherwise, read the next frame from the stream
-                    self.ret, self.frame = self.vid.read()
+            # keep looping infinitely until the stream is closed
+            while self.running:
+                # otherwise, read the next frame from the stream
+                self.ret, self.frame = self.vid.read()
         except:
             import traceback
             traceback.print_exc()
